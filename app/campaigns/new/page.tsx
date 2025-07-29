@@ -1,33 +1,111 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Send, TestTube } from "lucide-react"
+import { ArrowLeft, Send, TestTube, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { RichTextEditor } from "@/components/rich-text-editor"
+import { useEmail } from "@/hooks/use-email"
+import { useSubscribers } from "@/hooks/use-subscribers"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/hooks/use-toast"
 
 export default function NewCampaignPage() {
   const [title, setTitle] = useState("")
   const [subject, setSubject] = useState("")
   const [content, setContent] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [testEmail, setTestEmail] = useState("")
+  const { sendTestEmail, sendCampaign, isLoading, error, clearError } = useEmail()
+  const { contacts, isLoading: isLoadingSubscribers } = useSubscribers()
+  const { toast } = useToast()
+
+  // Get active subscriber emails
+  const activeSubscriberEmails = contacts
+    .filter(contact => !contact.unsubscribed)
+    .map(contact => contact.email)
 
   const handleSendTest = async () => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    alert("Test email sent!")
+    if (!testEmail) {
+      toast({
+        title: "Error",
+        description: "Please enter a test email address",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!subject || !content) {
+      toast({
+        title: "Error",
+        description: "Please fill in subject and content before sending test",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const result = await sendTestEmail(testEmail, subject, content)
+    
+    if (result.success) {
+      toast({
+        title: "Success",
+        description: "Test email sent successfully!",
+      })
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to send test email",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSendCampaign = async () => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setIsLoading(false)
-    alert("Campaign sent successfully!")
+    if (!title || !subject || !content) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (activeSubscriberEmails.length === 0) {
+      toast({
+        title: "Error",
+        description: "No active subscribers found. Please add subscribers first.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const result = await sendCampaign({
+      title,
+      subject,
+      content,
+      subscribers: activeSubscriberEmails,
+      fromEmail: "newsletter@manishtamang.com",
+    })
+
+    if (result.success) {
+      toast({
+        title: "Success",
+        description: `Campaign sent successfully to ${result.data?.successful || 0} subscribers!`,
+      })
+      // Reset form after successful send
+      setTitle("")
+      setSubject("")
+      setContent("")
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to send campaign",
+        variant: "destructive",
+      })
+    }
   }
 
   // Strip HTML tags for plain text preview
@@ -51,6 +129,18 @@ export default function NewCampaignPage() {
           <p className="text-gray-600">Create and send a new newsletter campaign</p>
         </div>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            <Button variant="link" size="sm" onClick={clearError} className="p-0 h-auto">
+              Dismiss
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
@@ -126,7 +216,9 @@ export default function NewCampaignPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700">Recipients</span>
-                <span className="text-sm font-medium text-gray-900">2,847 subscribers</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {isLoadingSubscribers ? "Loading..." : `${activeSubscriberEmails.length} subscribers`}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700">Created</span>
@@ -148,28 +240,55 @@ export default function NewCampaignPage() {
 
           <Card className="border-gray-200 bg-white shadow-sm">
             <CardHeader>
+              <CardTitle className="text-gray-900">Test Email</CardTitle>
+              <CardDescription className="text-gray-600">Send a test email before sending to all subscribers</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="testEmail" className="text-sm text-gray-700">
+                  Test Email Address
+                </Label>
+                <Input
+                  id="testEmail"
+                  type="email"
+                  placeholder="Enter email address for testing"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
+                />
+              </div>
+              <Button
+                variant="outline"
+                className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 bg-transparent"
+                onClick={handleSendTest}
+                disabled={isLoading || !testEmail || !subject || !content}
+              >
+                <TestTube className="mr-2 h-4 w-4" />
+                {isLoading ? "Sending..." : "Send Test Email"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gray-200 bg-white shadow-sm">
+            <CardHeader>
               <CardTitle className="text-gray-900">Actions</CardTitle>
               <CardDescription className="text-gray-600">Test and send your campaign</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
-                variant="outline"
-                className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 bg-transparent"
-                onClick={handleSendTest}
-                disabled={isLoading || !title || !subject || !content}
-              >
-                <TestTube className="mr-2 h-4 w-4" />
-                Send Test Email
-              </Button>
-              <Button
                 className="w-full bg-gray-900 text-white hover:bg-gray-800"
                 onClick={handleSendCampaign}
-                disabled={isLoading || !title || !subject || !content}
+                disabled={isLoading || !title || !subject || !content || activeSubscriberEmails.length === 0}
               >
                 <Send className="mr-2 h-4 w-4" />
                 {isLoading ? "Sending..." : "Send Campaign"}
               </Button>
-              <p className="text-xs text-gray-500">This will send the campaign to all 2,847 active subscribers</p>
+              <p className="text-xs text-gray-500">
+                {activeSubscriberEmails.length === 0 
+                  ? "No active subscribers found. Add subscribers first."
+                  : `This will send the campaign to all ${activeSubscriberEmails.length} active subscribers`
+                }
+              </p>
             </CardContent>
           </Card>
 
@@ -182,7 +301,7 @@ export default function NewCampaignPage() {
               <div className="border border-gray-200 rounded-lg bg-white">
                 <div className="border-b border-gray-100 p-4">
                   <div className="font-medium text-gray-900">{subject || "Email Subject"}</div>
-                  <div className="text-gray-500 text-xs mt-1">from newsletter@yoursite.com</div>
+                  <div className="text-gray-500 text-xs mt-1">from newsletter@manishtamang.com</div>
                 </div>
                 <div className="p-4">
                   {content ? (
