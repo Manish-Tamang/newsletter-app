@@ -1,0 +1,10 @@
+[33m685087b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m docs: update README with Resend.com integration instructions
+[33m318430a[m chore: add resend package dependency
+[33m80491a4[m feat: add email template component for consistent styling
+[33md13eb0b[m feat: update settings page with Resend.com API configuration
+[33m79fc15a[m feat: add subscriber lists page to display Resend.com audiences
+[33mee0f432[m feat: replace mock data with real Resend.com contacts in subscribers page
+[33m6e2635b[m feat: integrate real Resend.com subscribers in campaign creation
+[33m9d36e32[m feat: add custom hooks for email and subscriber management
+[33m9dc675b[m feat: add subscriber API routes for managing contacts and audiences
+[33ma7240b8[m feat: add email API routes for sending campaigns and test emails
