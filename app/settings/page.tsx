@@ -1,296 +1,285 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Save, Key, Mail, Globe, Shield } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
+import { CheckCircle, AlertCircle, Mail, Settings, Key, Globe } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState({
-    siteName: "Newsletter App",
-    siteUrl: "https://newsletter.example.com",
-    fromName: "Newsletter Team",
-    fromEmail: "newsletter@example.com",
-    replyToEmail: "support@example.com",
-    smtpHost: "smtp.example.com",
-    smtpPort: "587",
-    smtpUsername: "newsletter@example.com",
-    smtpPassword: "••••••••",
-    enableDoubleOptIn: true,
-    enableUnsubscribeLink: true,
-    trackOpens: true,
-    trackClicks: true,
-  })
+  const [apiKey, setApiKey] = useState("")
+  const [fromEmail, setFromEmail] = useState("newsletter@manishtamang.com")
+  const [replyToEmail, setReplyToEmail] = useState("support@manishtamang.com")
+  const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "error" | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
-  const handleSave = () => {
-    console.log("Saving settings:", settings)
-    alert("Settings saved successfully!")
+  // Check API status on component mount
+  useEffect(() => {
+    checkApiStatus()
+  }, [])
+
+  const checkApiStatus = async () => {
+    setApiStatus("checking")
+    try {
+      const response = await fetch("/api/email/test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: "test@example.com",
+          subject: "API Test",
+          content: "<p>Testing API connectivity...</p>",
+        }),
+      })
+
+      if (response.ok) {
+        setApiStatus("connected")
+      } else {
+        setApiStatus("error")
+      }
+    } catch (error) {
+      setApiStatus("error")
+    }
+  }
+
+  const handleSaveSettings = async () => {
+    setIsLoading(true)
+    
+    // In a real app, you would save these settings to your database
+    // For now, we'll just simulate saving
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    toast({
+      title: "Settings saved",
+      description: "Your email settings have been updated successfully.",
+    })
+    
+    setIsLoading(false)
+  }
+
+  const getApiStatusBadge = () => {
+    switch (apiStatus) {
+      case "checking":
+        return <Badge variant="secondary">Checking...</Badge>
+      case "connected":
+        return <Badge variant="default" className="bg-green-100 text-green-800">Connected</Badge>
+      case "error":
+        return <Badge variant="destructive">Error</Badge>
+      default:
+        return <Badge variant="secondary">Unknown</Badge>
+    }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Settings</h1>
-        <p className="text-gray-600">Configure your newsletter application</p>
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">Configure your newsletter application settings</p>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-100 border-gray-200">
-          <TabsTrigger
-            value="general"
-            className="flex items-center gap-2 text-gray-600 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
-          >
-            <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline">General</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="email"
-            className="flex items-center gap-2 text-gray-600 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
-          >
-            <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">Email</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="smtp"
-            className="flex items-center gap-2 text-gray-600 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
-          >
-            <Key className="h-4 w-4" />
-            <span className="hidden sm:inline">SMTP</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="privacy"
-            className="flex items-center gap-2 text-gray-600 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
-          >
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Privacy</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="space-y-6">
-          <Card className="border-gray-200 bg-white shadow-sm">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-gray-900">General Settings</CardTitle>
-              <CardDescription className="text-gray-600">
-                Basic configuration for your newsletter application
-              </CardDescription>
+              <div className="flex items-center gap-2">
+                <Key className="h-5 w-5 text-gray-600" />
+                <CardTitle>API Configuration</CardTitle>
+              </div>
+              <CardDescription>Configure your Resend.com API settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="siteName" className="text-gray-700">
-                    Site Name
-                  </Label>
-                  <Input
-                    id="siteName"
-                    value={settings.siteName}
-                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="siteUrl" className="text-gray-700">
-                    Site URL
-                  </Label>
-                  <Input
-                    id="siteUrl"
-                    value={settings.siteUrl}
-                    onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="apiKey">Resend API Key</Label>
+                <Input
+                  id="apiKey"
+                  type="password"
+                  placeholder="re_123456789..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Get your API key from{" "}
+                  <a
+                    href="https://resend.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Resend.com
+                  </a>
+                </p>
               </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">API Status</span>
+                {getApiStatusBadge()}
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={checkApiStatus}
+                disabled={apiStatus === "checking"}
+              >
+                {apiStatus === "checking" ? "Checking..." : "Test Connection"}
+              </Button>
+
+              {apiStatus === "error" && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Unable to connect to Resend API. Please check your API key and try again.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {apiStatus === "connected" && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Successfully connected to Resend API. You can now send emails.
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="email" className="space-y-6">
-          <Card className="border-gray-200 bg-white shadow-sm">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-gray-900">Email Configuration</CardTitle>
-              <CardDescription className="text-gray-600">
-                Configure how your emails appear to subscribers
-              </CardDescription>
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-gray-600" />
+                <CardTitle>Email Settings</CardTitle>
+              </div>
+              <CardDescription>Configure your email sending preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="fromName" className="text-gray-700">
-                    From Name
-                  </Label>
-                  <Input
-                    id="fromName"
-                    value={settings.fromName}
-                    onChange={(e) => setSettings({ ...settings, fromName: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fromEmail" className="text-gray-700">
-                    From Email
-                  </Label>
-                  <Input
-                    id="fromEmail"
-                    type="email"
-                    value={settings.fromEmail}
-                    onChange={(e) => setSettings({ ...settings, fromEmail: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
-              </div>
               <div className="space-y-2">
-                <Label htmlFor="replyToEmail" className="text-gray-700">
-                  Reply-To Email
-                </Label>
+                <Label htmlFor="fromEmail">From Email Address</Label>
+                <Input
+                  id="fromEmail"
+                  type="email"
+                  placeholder="newsletter@manishtamang.com"
+                  value={fromEmail}
+                  onChange={(e) => setFromEmail(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  This email will appear as the sender of your newsletters
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="replyToEmail">Reply-To Email Address</Label>
                 <Input
                   id="replyToEmail"
                   type="email"
-                  value={settings.replyToEmail}
-                  onChange={(e) => setSettings({ ...settings, replyToEmail: e.target.value })}
-                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
+                  placeholder="support@manishtamang.com"
+                  value={replyToEmail}
+                  onChange={(e) => setReplyToEmail(e.target.value)}
                 />
-                <p className="text-sm text-gray-500">Replies to your newsletters will be sent to this address</p>
+                <p className="text-sm text-muted-foreground">
+                  Replies to your emails will be sent to this address
+                </p>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="smtp" className="space-y-6">
-          <Card className="border-gray-200 bg-white shadow-sm">
+        <div className="space-y-6">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-gray-900">SMTP Configuration</CardTitle>
-              <CardDescription className="text-gray-600">Configure your SMTP server for sending emails</CardDescription>
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-gray-600" />
+                <CardTitle>General Settings</CardTitle>
+              </div>
+              <CardDescription>Configure general application settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="smtpHost" className="text-gray-700">
-                    SMTP Host
-                  </Label>
-                  <Input
-                    id="smtpHost"
-                    value={settings.smtpHost}
-                    onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="smtpPort" className="text-gray-700">
-                    SMTP Port
-                  </Label>
-                  <Input
-                    id="smtpPort"
-                    value={settings.smtpPort}
-                    onChange={(e) => setSettings({ ...settings, smtpPort: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="smtpUsername" className="text-gray-700">
-                    Username
-                  </Label>
-                  <Input
-                    id="smtpUsername"
-                    value={settings.smtpUsername}
-                    onChange={(e) => setSettings({ ...settings, smtpUsername: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="smtpPassword" className="text-gray-700">
-                    Password
-                  </Label>
-                  <Input
-                    id="smtpPassword"
-                    type="password"
-                    value={settings.smtpPassword}
-                    onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="text-blue-600">
-                  <Key className="h-5 w-5" />
-                </div>
-                <div className="text-sm">
-                  <p className="font-medium text-blue-900">SMTP Status</p>
-                  <p className="text-blue-700">
-                    <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                      Connected
-                    </Badge>{" "}
-                    Last tested 2 hours ago
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive notifications about campaign performance
                   </p>
                 </div>
+                <Switch defaultChecked />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="privacy" className="space-y-6">
-          <Card className="border-gray-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Privacy & Tracking</CardTitle>
-              <CardDescription className="text-gray-600">
-                Configure privacy settings and tracking options
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+              <Separator />
+
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-gray-700">Double Opt-in</Label>
-                  <p className="text-sm text-gray-500">Require subscribers to confirm their email address</p>
+                  <Label>Auto-save Drafts</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically save campaign drafts
+                  </p>
                 </div>
-                <Switch
-                  checked={settings.enableDoubleOptIn}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableDoubleOptIn: checked })}
-                />
+                <Switch defaultChecked />
               </div>
+
+              <Separator />
+
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-gray-700">Unsubscribe Link</Label>
-                  <p className="text-sm text-gray-500">Automatically add unsubscribe links to emails</p>
+                  <Label>Analytics Tracking</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Track email opens and clicks
+                  </p>
                 </div>
-                <Switch
-                  checked={settings.enableUnsubscribeLink}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableUnsubscribeLink: checked })}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-gray-700">Track Opens</Label>
-                  <p className="text-sm text-gray-500">Track when subscribers open your emails</p>
-                </div>
-                <Switch
-                  checked={settings.trackOpens}
-                  onCheckedChange={(checked) => setSettings({ ...settings, trackOpens: checked })}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-gray-700">Track Clicks</Label>
-                  <p className="text-sm text-gray-500">Track when subscribers click links in your emails</p>
-                </div>
-                <Switch
-                  checked={settings.trackClicks}
-                  onCheckedChange={(checked) => setSettings({ ...settings, trackClicks: checked })}
-                />
+                <Switch defaultChecked />
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-gray-600" />
+                <CardTitle>Domain Settings</CardTitle>
+              </div>
+              <CardDescription>Configure your sending domain</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Domain Status</Label>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">Not configured</Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Configure your domain in Resend dashboard
+                  </span>
+                </div>
+              </div>
+
+              <Button variant="outline" className="w-full">
+                Configure Domain
+              </Button>
+
+              <p className="text-sm text-muted-foreground">
+                Configure your domain in the{" "}
+                <a
+                  href="https://resend.com/domains"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  Resend dashboard
+                </a>{" "}
+                to improve deliverability.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} className="bg-gray-900 text-white hover:bg-gray-800">
-          <Save className="mr-2 h-4 w-4" />
-          Save Settings
+        <Button onClick={handleSaveSettings} disabled={isLoading}>
+          {isLoading ? "Saving..." : "Save Settings"}
         </Button>
       </div>
     </div>
