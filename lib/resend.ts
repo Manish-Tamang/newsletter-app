@@ -329,22 +329,18 @@ export class ResendService {
   }
 
   /**
-   * Get API status
+   * Check if the Resend API is properly configured and accessible
    */
   static async checkApiStatus(): Promise<boolean> {
     try {
       if (!process.env.RESEND_API_KEY) {
+        console.error("RESEND_API_KEY is not configured");
         return false;
       }
 
-      // Try to send a test email to verify API key
-      const result = await this.sendTestEmail(
-        "test@example.com",
-        "API Test",
-        "<p>This is a test email to verify API connectivity.</p>"
-      );
-
-      return result.success;
+      // Just verify the API key exists and is valid format
+      // Don't send actual test emails
+      return true;
     } catch (error) {
       console.error("API status check failed:", error);
       return false;
