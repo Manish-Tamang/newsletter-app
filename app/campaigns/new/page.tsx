@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useTemplates } from "@/hooks/use-templates"
 
 export default function NewCampaignPage() {
   const [title, setTitle] = useState("")
@@ -27,7 +28,26 @@ export default function NewCampaignPage() {
   const [showFullPreview, setShowFullPreview] = useState(false)
   const { sendTestEmail, sendCampaign, isLoading, error, clearError } = useEmail()
   const { contacts, isLoading: isLoadingSubscribers } = useSubscribers()
+  const { templates, loading: loadingTemplates } = useTemplates()
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
   const { toast } = useToast()
+
+  // When a template is selected, fill the editor
+  useEffect(() => {
+    if (!selectedTemplateId) return
+    const template = templates.find(t => t.id.toString() === selectedTemplateId)
+    if (!template) return
+    setSubject(template.name)
+    if (template.isHtml) {
+      setUseRawHtml(true)
+      setRawHtml(template.htmlContent || template.content)
+      setContent("")
+    } else {
+      setUseRawHtml(false)
+      setContent(template.content)
+      setRawHtml("")
+    }
+  }, [selectedTemplateId, templates])
 
   // Get active subscriber emails
   const activeSubscriberEmails = contacts
@@ -156,6 +176,27 @@ export default function NewCampaignPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
+          <Card className="border-gray-200 bg-white">
+            <CardHeader>
+              <CardTitle className="text-gray-900">Select Template</CardTitle>
+              <CardDescription className="text-gray-600">Choose a template to start from (optional)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <select
+                className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-200 bg-white"
+                value={selectedTemplateId}
+                onChange={e => setSelectedTemplateId(e.target.value)}
+                disabled={loadingTemplates || templates.length === 0}
+              >
+                <option value="">-- No template --</option>
+                {templates.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} {t.isHtml ? "(HTML)" : "(Rich Text)"}
+                  </option>
+                ))}
+              </select>
+            </CardContent>
+          </Card>
           <Card className="border-gray-200 bg-white shadow-sm">
             <CardHeader>
               <CardTitle className="text-gray-900">Campaign Details</CardTitle>

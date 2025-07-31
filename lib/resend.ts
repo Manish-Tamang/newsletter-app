@@ -73,7 +73,7 @@ export class ResendService {
         subject: emailData.subject,
         html: emailData.html,
         text: emailData.text,
-        reply_to: emailData.replyTo,
+        replyTo: emailData.replyTo,
       });
 
       if (error) {
@@ -163,6 +163,22 @@ export class ResendService {
   }
 
   /**
+   * Transform raw contact data from Resend API to our Contact interface
+   */
+  private static transformContactData(rawContact: any): Contact {
+    return {
+      id: rawContact.id,
+      email: rawContact.email,
+      firstName: rawContact.firstName || rawContact.first_name,
+      lastName: rawContact.lastName || rawContact.last_name,
+      unsubscribed: rawContact.unsubscribed || false,
+      audienceId: rawContact.audienceId || rawContact.audience_id || '',
+      createdAt: rawContact.createdAt || rawContact.created_at || new Date().toISOString(),
+      updatedAt: rawContact.updatedAt || rawContact.updated_at || new Date().toISOString(),
+    };
+  }
+
+  /**
    * Get all contacts from Resend
    */
   static async getContacts(): Promise<ContactsResponse> {
@@ -187,9 +203,14 @@ export class ResendService {
         };
       }
 
+      // Transform the raw data to match our Contact interface
+      const transformedContacts = (data?.data || []).map(contact => 
+        this.transformContactData(contact)
+      );
+
       return {
         success: true,
-        data: data?.data || [],
+        data: transformedContacts,
       };
     } catch (error) {
       console.error("Error fetching contacts:", error);
@@ -199,6 +220,18 @@ export class ResendService {
           error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
+  }
+
+  /**
+   * Transform raw audience data from Resend API to our Audience interface
+   */
+  private static transformAudienceData(rawAudience: any): Audience {
+    return {
+      id: rawAudience.id,
+      name: rawAudience.name,
+      createdAt: rawAudience.createdAt || rawAudience.created_at || new Date().toISOString(),
+      updatedAt: rawAudience.updatedAt || rawAudience.updated_at || new Date().toISOString(),
+    };
   }
 
   /**
@@ -220,9 +253,14 @@ export class ResendService {
         };
       }
 
+      // Transform the raw data to match our Audience interface
+      const transformedAudiences = (data?.data || []).map(audience => 
+        this.transformAudienceData(audience)
+      );
+
       return {
         success: true,
-        data: data?.data || [],
+        data: transformedAudiences,
       };
     } catch (error) {
       console.error("Error fetching audiences:", error);
