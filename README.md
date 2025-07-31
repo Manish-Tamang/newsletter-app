@@ -12,6 +12,7 @@ A modern newsletter management platform built with Next.js and integrated with R
 - 🧪 **Test Emails**: Send test emails before campaigns
 - 📱 **Responsive Design**: Works on desktop and mobile
 - 🔄 **Real-time Data**: Fetch contacts and audiences from Resend.com
+- 📝 **Email Templates**: Create and manage reusable email templates
 
 ## Tech Stack
 
@@ -248,3 +249,235 @@ For support with this application:
 ---
 
 Built with ❤️ using Next.js and Resend.com
+
+## Email Template System
+
+### Overview
+
+The email template system provides a comprehensive solution for creating, managing, and using email templates in your newsletter application. It supports both rich text editing and raw HTML editing with real-time preview capabilities.
+
+### Features
+
+#### 🎯 Core Features
+- **Rich Text Editor**: Full-featured WYSIWYG editor with formatting tools
+- **Raw HTML Editor**: Direct HTML editing for advanced users
+- **Real-time Preview**: See how templates will look in emails
+- **Template Categories**: Organize templates by type (Newsletter, Marketing, etc.)
+- **Search & Filter**: Find templates quickly with search and category filters
+- **Inline Editing**: Edit templates directly from the preview
+- **Template Usage Tracking**: Track how many times each template has been used
+
+#### 🔧 Technical Features
+- **Modular Architecture**: Separated into reusable components
+- **Type Safety**: Full TypeScript support with proper interfaces
+- **Error Handling**: Comprehensive error handling with user feedback
+- **Loading States**: Skeleton loading components for better UX
+- **Responsive Design**: Works on all device sizes
+- **Server-Side Safety**: API endpoints with proper validation
+
+### Architecture
+
+#### Components Structure
+
+```
+components/
+├── template-editor.tsx          # Main template creation/editing component
+├── template-card.tsx            # Template card for list view
+├── template-preview-editor.tsx  # Inline editing with preview
+└── rich-text-editor.tsx        # Rich text editing component
+
+hooks/
+└── use-templates.ts            # Template management hook
+
+app/
+├── templates/
+│   ├── page.tsx                # Main templates list
+│   ├── loading.tsx             # Loading skeleton
+│   ├── new/
+│   │   └── page.tsx            # Create new template
+│   └── [id]/
+│       ├── page.tsx            # Template detail view
+│       └── edit/
+│           └── page.tsx        # Edit template page
+└── api/
+    └── templates/
+        ├── route.ts             # GET/POST templates
+        └── [id]/
+            └── route.ts         # GET/PUT/DELETE individual template
+```
+
+#### Data Flow
+
+1. **Template Creation**: User creates template → API stores → Hook updates state
+2. **Template Editing**: User edits → Preview updates → Save to API → State updates
+3. **Template Usage**: User selects template → Navigate to campaign creation
+4. **Template Management**: List view → Search/Filter → Actions (Edit/Delete/Use)
+
+### API Endpoints
+
+#### GET /api/templates
+Returns all templates
+```json
+{
+  "templates": [
+    {
+      "id": "string",
+      "name": "string",
+      "description": "string",
+      "category": "string",
+      "content": "string",
+      "htmlContent": "string",
+      "isHtml": "boolean",
+      "createdAt": "string",
+      "updatedAt": "string",
+      "usage": "number"
+    }
+  ]
+}
+```
+
+#### POST /api/templates
+Creates a new template
+```json
+{
+  "name": "string",
+  "description": "string",
+  "category": "string",
+  "content": "string",
+  "htmlContent": "string",
+  "isHtml": "boolean"
+}
+```
+
+#### GET /api/templates/[id]
+Returns a specific template
+
+#### PUT /api/templates/[id]
+Updates a specific template
+
+#### DELETE /api/templates/[id]
+Deletes a specific template
+
+### Usage Examples
+
+#### Creating a Template
+
+```tsx
+import { useTemplates } from "@/hooks/use-templates"
+
+const { createTemplate } = useTemplates()
+
+const handleCreate = async () => {
+  await createTemplate({
+    name: "Weekly Newsletter",
+    description: "Standard weekly newsletter template",
+    category: "Newsletter",
+    content: "<h1>Hello {{name}}!</h1>",
+    htmlContent: "<html><body><h1>Hello {{name}}!</h1></body></html>",
+    isHtml: false
+  })
+}
+```
+
+#### Using the Template Editor
+
+```tsx
+import { TemplateEditor } from "@/components/template-editor"
+
+<TemplateEditor
+  template={existingTemplate} // Optional for editing
+  onSave={handleSave}
+  onCancel={handleCancel}
+  loading={loading}
+/>
+```
+
+#### Template Preview with Inline Editing
+
+```tsx
+import { TemplatePreviewEditor } from "@/components/template-preview-editor"
+
+<TemplatePreviewEditor
+  template={template}
+  onSave={handleSave}
+  onCancel={handleCancel}
+  loading={loading}
+/>
+```
+
+### Template Variables
+
+The system supports template variables that will be replaced when sending emails:
+
+- `{{name}}` - Subscriber's name
+- `{{email}}` - Subscriber's email
+- `{{unsubscribe_url}}` - Unsubscribe link
+- `{{company_name}}` - Your company name
+
+### Security Considerations
+
+#### Client-Side Safety
+- All user inputs are validated before sending to API
+- Rich text editor sanitizes HTML content
+- XSS protection through proper content sanitization
+
+#### Server-Side Safety
+- API endpoints validate all required fields
+- Input sanitization on server side
+- Proper error handling and logging
+
+### Performance Optimizations
+
+1. **Lazy Loading**: Templates are loaded only when needed
+2. **Caching**: Template data is cached in the hook state
+3. **Debounced Search**: Search input is debounced to prevent excessive API calls
+4. **Skeleton Loading**: Loading states provide better perceived performance
+
+### Future Enhancements
+
+#### Planned Features
+- **Template Versioning**: Track changes and rollback to previous versions
+- **Template Analytics**: Track open rates, click rates per template
+- **Template A/B Testing**: Test different versions of templates
+- **Template Import/Export**: Import templates from external sources
+- **Template Collaboration**: Multiple users can edit templates
+- **Template Approval Workflow**: Approval process for template changes
+
+#### Technical Improvements
+- **Database Integration**: Replace in-memory storage with proper database
+- **Real-time Collaboration**: WebSocket support for live editing
+- **Template Validation**: Validate template syntax and variables
+- **Bulk Operations**: Select and edit multiple templates at once
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Template not saving**: Check if all required fields are filled
+2. **Preview not updating**: Ensure content is not empty
+3. **Rich text editor not working**: Check browser compatibility
+4. **API errors**: Verify network connection and server status
+
+#### Debug Mode
+
+Enable debug mode by adding `?debug=true` to any template URL to see additional information.
+
+### Contributing to Template System
+
+When contributing to the template system:
+
+1. Follow the existing component structure
+2. Add proper TypeScript types
+3. Include error handling
+4. Add loading states
+5. Test on different screen sizes
+6. Update documentation
+
+### Dependencies
+
+- **React**: UI framework
+- **Next.js**: Full-stack framework
+- **TypeScript**: Type safety
+- **Tailwind CSS**: Styling
+- **Lucide React**: Icons
+- **Radix UI**: Accessible components
