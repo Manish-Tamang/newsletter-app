@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Send, TestTube, AlertCircle, Code, Type, Eye, X } from "lucide-react"
+import { ArrowLeft, Send, TestTube, AlertCircle, Code, Type, Eye, X, Save } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { useEmail } from "@/hooks/use-email"
@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useTemplates } from "@/hooks/use-templates"
+import { useCampaigns } from "@/hooks/use-campaigns"
 
 export default function NewCampaignPage() {
   const [title, setTitle] = useState("")
@@ -29,6 +30,7 @@ export default function NewCampaignPage() {
   const { sendTestEmail, sendCampaign, isLoading, error, clearError } = useEmail()
   const { contacts, isLoading: isLoadingSubscribers } = useSubscribers()
   const { templates, loading: loadingTemplates } = useTemplates()
+  const { createCampaign } = useCampaigns()
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
   const { toast } = useToast()
 
@@ -113,28 +115,85 @@ export default function NewCampaignPage() {
       return
     }
 
-    const result = await sendCampaign({
-      title,
-      subject,
-      content: getFinalContent(),
-      subscribers: activeSubscriberEmails,
-      fromEmail: "newsletter@manishtamang.com",
-    })
+    try {
+      // First, save the campaign to the database
+      const savedCampaign = await createCampaign({
+        title,
+        subject,
+        content: getFinalContent(),
+        fromEmail: "newsletter@manishtamang.com",
+      })
 
-    if (result.success) {
+      // Then send the campaign
+      const result = await sendCampaign({
+        title,
+        subject,
+        content: getFinalContent(),
+        subscribers: activeSubscriberEmails,
+        fromEmail: "newsletter@manishtamang.com",
+      })
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Campaign sent successfully to ${result.data?.successful || 0} subscribers!`,
+        })
+        // Reset form after successful send
+        setTitle("")
+        setSubject("")
+        setContent("")
+        setRawHtml("")
+        setSelectedTemplateId("")
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to send campaign",
+          variant: "destructive",
+        })
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to create or send campaign",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSaveAsDraft = async () => {
+    if (!title || !subject || !getFinalContent()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Save the campaign to the database as draft
+      await createCampaign({
+        title,
+        subject,
+        content: getFinalContent(),
+        fromEmail: "newsletter@manishtamang.com",
+      })
+
       toast({
         title: "Success",
-        description: `Campaign sent successfully to ${result.data?.successful || 0} subscribers!`,
+        description: "Campaign saved as draft successfully!",
       })
-      // Reset form after successful send
+      
+      // Reset form after successful save
       setTitle("")
       setSubject("")
       setContent("")
       setRawHtml("")
-    } else {
+      setSelectedTemplateId("")
+    } catch (err) {
       toast({
         title: "Error",
-        description: result.error || "Failed to send campaign",
+        description: "Failed to save campaign as draft",
         variant: "destructive",
       })
     }
@@ -334,6 +393,14 @@ export default function NewCampaignPage() {
               >
                 <Send className="mr-2 h-4 w-4" />
                 {isLoading ? "Sending..." : "Send Campaign"}
+              </Button>
+              <Button
+                className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 bg-transparent"
+                onClick={handleSaveAsDraft}
+                disabled={isLoading || !title || !subject || !getFinalContent()}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {isLoading ? "Saving..." : "Save as Draft"}
               </Button>
               <p className="text-xs text-gray-500">
                 {activeSubscriberEmails.length === 0 
