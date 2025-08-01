@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Send, TestTube, AlertCircle, Code, Type, Eye, X, Save } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { RichTextEditor } from "@/components/rich-text-editor"
+import { EmailBuilder } from "@/components/EmailBuilder"
+import { HtmlCodeEditor } from "@/components/html-code-editor"
 import { useEmail } from "@/hooks/use-email"
 import { useSubscribers } from "@/hooks/use-subscribers"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -317,30 +318,19 @@ export default function NewCampaignPage() {
             <CardContent>
               <div className="space-y-4">
                 {useRawHtml ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="rawHtml" className="text-gray-700">
-                      HTML Content
-                    </Label>
-                    <Textarea
-                      id="rawHtml"
-                      placeholder="<html><body><h1>Your HTML content here...</h1></body></html>"
-                      value={rawHtml}
-                      onChange={(e) => setRawHtml(e.target.value)}
-                      className="min-h-[400px] font-mono text-sm border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                    />
-                    <p className="text-sm text-gray-500">
-                      Write your complete HTML email template. You can use variables like {"{{name}}"} which will be replaced automatically.
-                    </p>
-                  </div>
+                  <HtmlCodeEditor
+                    value={rawHtml}
+                    onChange={setRawHtml}
+                    placeholder="<html><body><h1>Your HTML content here...</h1></body></html>"
+                  />
                 ) : (
                   <>
-                    <RichTextEditor
-                      value={content}
-                      onChange={setContent}
-                      placeholder="Write your newsletter content here..."
+                    <EmailBuilder
+                      onSave={(html) => setContent(html)}
+                      className="w-full"
                     />
                     <p className="text-sm text-gray-500">
-                      Use the toolbar above to format your content. Variables like {"{{name}}"} will be replaced
+                      Use the drag-and-drop editor to create your email template. Variables like {"{{name}}"} will be replaced
                       automatically.
                     </p>
                   </>

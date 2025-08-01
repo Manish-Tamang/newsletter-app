@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { RichTextEditor } from "@/components/rich-text-editor"
+import { EmailBuilder } from "@/components/EmailBuilder"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Eye, Save, X, Type, Code } from "lucide-react"
@@ -208,13 +208,12 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <RichTextEditor
-                    value={content}
-                    onChange={setContent}
-                    placeholder="Write your template content here..."
+                  <EmailBuilder
+                    onSave={(html) => setContent(html)}
+                    className="w-full"
                   />
                   <p className="text-sm text-gray-500">
-                    Use the toolbar above to format your content. Variables like {"{{name}}"} will be replaced automatically.
+                    Use the drag-and-drop editor to create your email template. Variables like {"{{name}}"} will be replaced automatically.
                   </p>
                 </div>
               )}
