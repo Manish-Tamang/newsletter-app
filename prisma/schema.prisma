@@ -19,3 +19,18 @@ model Template {
   updatedAt   DateTime @updatedAt
   usage       Int      @default(0)
 }
+
+model Campaign {
+  id          Int       @id @default(autoincrement())
+  title       String
+  subject     String
+  content     String
+  status      String    @default("draft") 
+  sentDate    DateTime?
+  openRate    Float?
+  clickRate   Float?
+  subscribers Int?
+  fromEmail   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
