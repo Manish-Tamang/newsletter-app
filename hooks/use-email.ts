@@ -66,12 +66,17 @@ export function useEmail() {
     setError(null);
 
     try {
-      const response = await fetch('/api/email/test', {
+      const response = await fetch('/api/email/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ to, subject, content }),
+        body: JSON.stringify({ 
+          to, 
+          subject, 
+          html: content,
+          from: 'newsletter@manishtamang.com'
+        }),
       });
 
       const result = await response.json();
