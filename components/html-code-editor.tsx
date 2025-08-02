@@ -7,6 +7,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { html } from '@codemirror/lang-html'
 import { vscodeDark } from '@uiw/codemirror-theme-vscode'
 import { useState } from "react"
+import { EditorView } from '@codemirror/view'
 
 interface HtmlCodeEditorProps {
   value: string
@@ -105,12 +106,27 @@ export function HtmlCodeEditor({ value, onChange, placeholder, className }: Html
       </div>
       
       <div className={`border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden ${
-        isFullScreen ? 'h-[calc(100vh-120px)]' : ''
+        isFullScreen ? 'h-[calc(100vh-120px)]' : 'h-full'
       }`}>
         <CodeMirror
           value={value}
-          height={isFullScreen ? "calc(100vh - 140px)" : "400px"}
-          extensions={[html()]}
+          height={isFullScreen ? "calc(100vh - 140px)" : "100%"}
+          extensions={[
+            html(),
+            EditorView.lineWrapping,
+            EditorView.theme({
+              "&": {
+                fontSize: "14px",
+              },
+              ".cm-line": {
+                padding: "0 8px",
+                lineHeight: "1.5",
+              },
+              ".cm-content": {
+                fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace",
+              },
+            })
+          ]}
           onChange={(value) => onChange(value)}
           placeholder={placeholder || "<html><body><h1>Your HTML content here...</h1></body></html>"}
           theme={vscodeDark}
@@ -125,7 +141,14 @@ export function HtmlCodeEditor({ value, onChange, placeholder, className }: Html
             historyKeymap: true,
             foldKeymap: true,
             completionKeymap: true,
+            foldGutter: true,
+            dropCursor: true,
+            allowMultipleSelections: true,
+            indentOnInput: true,
+            syntaxHighlighting: true,
+            tabSize: 2,
           }}
+          style={{ width: '100%' }}
         />
       </div>
       
