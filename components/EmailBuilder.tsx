@@ -1,10 +1,8 @@
 "use client"
 
-import { useState, useRef } from "react"
-import dynamic from "next/dynamic"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Download, Save, Eye } from "lucide-react"
+import { Download, Save, Eye, Maximize2, Minimize2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -14,62 +12,108 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-// Dynamically import the EmailEditor with SSR disabled
-const EmailEditor = dynamic(() => import("react-email-editor"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-96">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading email editor...</p>
-      </div>
-    </div>
-  ),
-})
-
 interface EmailBuilderProps {
   onSave?: (html: string, design: any) => void
+  onExportToHtml?: (html: string) => void
   initialDesign?: any
   className?: string
 }
 
-export function EmailBuilder({ onSave, initialDesign, className }: EmailBuilderProps) {
+export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className }: EmailBuilderProps) {
   const emailEditorRef = useRef<any>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [previewHtml, setPreviewHtml] = useState("")
   const [isExporting, setIsExporting] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [EmailEditorComponent, setEmailEditorComponent] = useState<any>(null)
 
+  useEffect(() => {
+    // Dynamically import the EmailEditor component
+    const loadEmailEditor = async () => {
+      try {
+        const { default: EmailEditor } = await import("react-email-editor")
+        setEmailEditorComponent(() => EmailEditor)
+      } catch (error) {
+        console.error("Failed to load email editor:", error)
+      }
+    }
+
+    loadEmailEditor()
+  }, [])
   const exportHtml = () => {
-    if (emailEditorRef.current) {
-      setIsExporting(true)
-      emailEditorRef.current.exportHtml((data: any) => {
-        const { html } = data
-        setPreviewHtml(html)
-        setIsPreviewOpen(true)
-        setIsExporting(false)
-      })
-    }
-  }
+    const unlayer = emailEditorRef.current?.editor;
+    if (!unlayer) return;
+  
+    setIsExporting(true);
+  
+    unlayer.exportHtml((data: any) => {
+      if (data?.html) {
+        setPreviewHtml(data.html);
+        setIsPreviewOpen(true);
+        setIsExporting(false);
+        if (onSave) {
+          unlayer.saveDesign((design: any) => {
+            onSave(data.html, design);
+          });
+        }
+      } else {
+        alert("Failed to export HTML");
+        setIsExporting(false);
+      }
+    });
+  };
+  
 
-  const saveDesign = () => {
-    if (emailEditorRef.current) {
-      emailEditorRef.current.saveDesign((design: any) => {
-        emailEditorRef.current.exportHtml((data: any) => {
-          const { html } = data
-          if (onSave) {
-            onSave(html, design)
+  const saveDesign = async () => {
+    const unlayer = emailEditorRef.current?.editor;
+    if (unlayer) {
+      unlayer.saveDesign((design: any) => {
+        unlayer.exportHtml((data: any) => {
+          const { html } = data;
+  
+          if (onSave && html) {
+            onSave(html, design);
           }
-        })
-      })
+        });
+      });
     }
-  }
+  };
+  
 
   const onLoad = () => {
     console.log("Email editor loaded")
   }
 
-  const onReady = () => {
+  const onReady = (unlayer: any) => {
     console.log("Email editor ready")
+    
+    // Wait a bit for the editor to fully initialize
+    setTimeout(() => {
+      if (unlayer) {
+        // Load initial design if provided
+        if (initialDesign) {
+          unlayer.loadDesign(initialDesign)
+        } else {
+          // Add a default text block if no initial design
+          unlayer.addEventListener('design:updated', () => {
+            unlayer.exportHtml((data: any) => {
+              const { html } = data
+              if (onSave && html && html.length > 0 && !html.includes('missing-container')) {
+                onSave(html, null)
+              }
+            })
+          })
+        }
+        
+        unlayer.exportHtml((data: any) => {
+          const { html } = data
+          console.log("Initial HTML content:", html)
+          if (onSave && html && html.length > 0 && !html.includes('missing-container')) {
+            onSave(html, null)
+          }
+        })
+      }
+    }, 1000)
   }
 
   const onDesignLoad = (data: any) => {
@@ -78,20 +122,95 @@ export function EmailBuilder({ onSave, initialDesign, className }: EmailBuilderP
 
   const onDesignSave = (data: any) => {
     console.log("Design saved", data)
+    // Save the content when design changes
+    const unlayer = emailEditorRef.current?.editor
+    if (unlayer) {
+      unlayer.exportHtml((data: any) => {
+        const { html } = data
+        if (onSave) {
+          onSave(html, null)
+        }
+      })
+    }
   }
+
+  // Add a periodic save mechanism
+  useEffect(() => {
+    if (!EmailEditorComponent) return
+
+    const interval = setInterval(() => {
+      const unlayer = emailEditorRef.current?.editor
+      if (unlayer) {
+        unlayer.saveDesign((design: any) => {
+          if (design && Object.keys(design).length > 0) {
+                         // Use our API route for periodic saves
+             fetch('/api/email/export', {
+               method: 'POST',
+               headers: {
+                 'Content-Type': 'application/json'
+               },
+               body: JSON.stringify({
+                 design: design
+               })
+             })
+                         .then(response => {
+               if (!response.ok) {
+                 throw new Error(`HTTP error! status: ${response.status}`)
+               }
+               return response.json()
+             })
+                           .then(data => {
+                if (data.success && data.html && onSave) {
+                  onSave(data.html, null)
+                }
+              })
+             .catch(error => {
+               console.error("Periodic save error:", error)
+             })
+          }
+        })
+      }
+    }, 5000) // Save every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [EmailEditorComponent, onSave])
 
   return (
     <div className={className}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Email Builder</span>
+      <div className={isFullscreen ? "fixed inset-4 z-50 bg-white border rounded-lg shadow-lg" : "border rounded-lg bg-white"}>
+        {/* Header */}
+        <div className={`p-4 border-b ${isFullscreen ? "" : ""}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Email Editor</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Drag and drop elements to create your email template. Use the toolbar on the left to add content blocks.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="flex items-center gap-2"
+              >
+                {isFullscreen ? (
+                  <>
+                    <Minimize2 className="h-4 w-4" />
+                    Exit Fullscreen
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="h-4 w-4" />
+                    Fullscreen
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={exportHtml}
-                disabled={isExporting}
+                disabled={isExporting || !EmailEditorComponent}
                 className="flex items-center gap-2"
               >
                 <Eye className="h-4 w-4" />
@@ -101,6 +220,7 @@ export function EmailBuilder({ onSave, initialDesign, className }: EmailBuilderP
                 variant="outline"
                 size="sm"
                 onClick={saveDesign}
+                disabled={!EmailEditorComponent}
                 className="flex items-center gap-2"
               >
                 <Save className="h-4 w-4" />
@@ -109,62 +229,65 @@ export function EmailBuilder({ onSave, initialDesign, className }: EmailBuilderP
               <Button
                 size="sm"
                 onClick={exportHtml}
-                disabled={isExporting}
+                disabled={isExporting || !EmailEditorComponent}
                 className="flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
                 {isExporting ? "Exporting..." : "Export HTML"}
               </Button>
             </div>
-          </CardTitle>
-          <CardDescription>
-            Drag and drop elements to create your email template. Use the toolbar on the left to add content blocks.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="h-[600px] w-full">
-            <EmailEditor
+          </div>
+        </div>
+        <div>
+          {EmailEditorComponent ? (
+            <EmailEditorComponent
               ref={emailEditorRef}
               onLoad={onLoad}
               onReady={onReady}
               onDesignLoad={onDesignLoad}
               onDesignSave={onDesignSave}
-              projectId={123456} // Replace with your actual project ID
-              style={{ height: "100%", width: "100%" }}
-              options={{
-                displayMode: "emailMode",
-                features: {
-                  preview: true,
-                  imageEditor: true,
-                  stockImages: true,
-                  textEditor: {
-                    spellChecker: true,
-                  },
-                },
-                appearance: {
-                  theme: "light",
-                  panels: {
-                    tools: {
-                      dock: "left",
+                                                           options={{
+                  displayMode: "email",
+                  features: {
+                    preview: true,
+                    imageEditor: true,
+                    stockImages: true,
+                    textEditor: {
+                      spellChecker: true,
                     },
                   },
-                },
-                user: {
-                  id: 1,
-                  name: "User",
-                  email: "user@example.com",
-                },
-                mergeTags: [
-                  { name: "First Name", value: "{{first_name}}", sample: "John" },
-                  { name: "Last Name", value: "{{last_name}}", sample: "Doe" },
-                  { name: "Email", value: "{{email}}", sample: "john@example.com" },
-                  { name: "Company", value: "{{company}}", sample: "Acme Inc" },
-                ],
-              }}
+                  appearance: {
+                    theme: "light",
+                    panels: {
+                      tools: {
+                        dock: "left",
+                      },
+                    },
+                  },
+                  user: {
+                    id: 1,
+                    name: "User",
+                    email: "user@example.com",
+                  },
+                  mergeTags: [
+                    { name: "First Name", value: "{{first_name}}", sample: "John" },
+                    { name: "Last Name", value: "{{last_name}}", sample: "Doe" },
+                    { name: "Email", value: "{{email}}", sample: "john@example.com" },
+                    { name: "Company", value: "{{company}}", sample: "Acme Inc" },
+                  ],
+                }}
+                               apiKey="7jnfeJ7C8UgmeA9pjTzuh5P2Bf3smZoz16GZ7CNV9KIMB7nUCvslNb6ahRHJQ0xd"
             />
-          </div>
-        </CardContent>
-      </Card>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading email editor...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -204,17 +327,27 @@ export function EmailBuilder({ onSave, initialDesign, className }: EmailBuilderP
             >
               Close
             </Button>
-            <Button
-              onClick={() => {
-                navigator.clipboard.writeText(previewHtml)
-                // You could add a toast notification here
-              }}
-            >
-              Copy HTML
-            </Button>
+                         <Button
+               onClick={() => {
+                 navigator.clipboard.writeText(previewHtml)
+                 // You could add a toast notification here
+               }}
+             >
+               Copy HTML
+             </Button>
+             <Button
+               onClick={() => {
+                 if (onExportToHtml) {
+                   onExportToHtml(previewHtml)
+                 }
+                 setIsPreviewOpen(false)
+               }}
+             >
+               Use as Raw HTML
+             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
-} 
+}
