@@ -59,9 +59,78 @@ export interface AudiencesResponse {
 
 export class ResendService {
   /**
-   * Send a single email
+   * Wrap email content with profile picture header
+   */
+  private static wrapEmailWithProfilePicture(htmlContent: string): string {
+    const profilePictureUrl = "https://github.com/Manish-Tamang/newsletter-app/blob/main/public/pfp.png?raw=true";
+    
+    const emailHeader = `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="text-align: center; padding: 20px 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 20px;">
+          <img src="${profilePictureUrl}" alt="Profile Picture" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff;">
+          <h2 style="margin: 10px 0 0 0; color: #333; font-size: 24px;">Newsletter</h2>
+          <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Stay updated with our latest news</p>
+        </div>
+        <div style="line-height: 1.6; color: #333;">
+          ${htmlContent}
+        </div>
+        <div style="text-align: center; padding: 20px 0; border-top: 1px solid #e0e0e0; margin-top: 20px; color: #666; font-size: 12px;">
+          <p>© 2024 Newsletter App. All rights reserved.</p>
+          <p>If you no longer wish to receive these emails, you can <a href="{{unsubscribe_url}}" style="color: #007bff;">unsubscribe here</a>.</p>
+        </div>
+      </div>
+    `;
+    
+    return emailHeader;
+  }
+
+  /**
+   * Send a single email with profile picture header
    */
   static async sendEmail(emailData: EmailData): Promise<SendEmailResponse> {
+    try {
+      if (!process.env.RESEND_API_KEY) {
+        throw new Error("RESEND_API_KEY is not configured");
+      }
+
+      // Wrap the HTML content with profile picture header
+      const wrappedHtml = this.wrapEmailWithProfilePicture(emailData.html);
+
+      const { data, error } = await resend.emails.send({
+        from: emailData.from || "newsletter@manishtamang.com",
+        to: emailData.to,
+        subject: emailData.subject,
+        html: wrappedHtml,
+        text: emailData.text,
+        replyTo: emailData.replyTo,
+      });
+
+      if (error) {
+        console.error("Resend API error:", error);
+        return {
+          success: false,
+          error: error.message || "Failed to send email",
+        };
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      console.error("Error sending email:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  }
+
+  /**
+   * Send a single email without profile picture wrapper (for raw HTML emails)
+   */
+  static async sendRawEmail(emailData: EmailData): Promise<SendEmailResponse> {
     try {
       if (!process.env.RESEND_API_KEY) {
         throw new Error("RESEND_API_KEY is not configured");
