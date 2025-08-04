@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Send, TestTube, AlertCircle, Code, Type, Eye, X, Save } from "lucide-react"
+import { ArrowLeft, Send, TestTube, AlertCircle, Code, Type, Eye, X, Save, Rocket, FileText, Archive } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { EmailBuilder } from "@/components/EmailBuilder"
 import { HtmlCodeEditor } from "@/components/html-code-editor"
@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useTemplates } from "@/hooks/use-templates"
 import { useCampaigns } from "@/hooks/use-campaigns"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function NewCampaignPage() {
   const [title, setTitle] = useState("")
@@ -28,7 +29,7 @@ export default function NewCampaignPage() {
   const [useRawHtml, setUseRawHtml] = useState(false)
   const [testEmail, setTestEmail] = useState("")
   const [showFullPreview, setShowFullPreview] = useState(false)
-  
+
   // Function to handle exporting HTML from EmailBuilder to Raw HTML editor
   const handleExportToHtml = (html: string) => {
     setRawHtml(html)
@@ -89,7 +90,7 @@ export default function NewCampaignPage() {
     }
 
     const result = await sendTestEmail(testEmail, subject, getFinalContent())
-    
+
     if (result.success) {
       toast({
         title: "Success",
@@ -191,7 +192,7 @@ export default function NewCampaignPage() {
         title: "Success",
         description: "Campaign saved as draft successfully!",
       })
-      
+
       // Reset form after successful save
       setTitle("")
       setSubject("")
@@ -215,22 +216,20 @@ export default function NewCampaignPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild className="text-gray-600 hover:bg-gray-50 hover:text-gray-900">
+    <div className="max-w-6xl mx-auto py-8 px-6">
+      {/* Header */}
+      <div className="mb-8">
+        <Button variant="ghost" size="sm" asChild className="text-gray-600 hover:text-black p-0 mb-4">
           <Link href="/campaigns">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Campaigns
           </Link>
         </Button>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">New Campaign</h1>
-          <p className="text-gray-600">Create and send a new newsletter campaign</p>
-        </div>
+        <h1 className="text-3xl font-medium tracking-tight">New campaign</h1>
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error}
@@ -241,215 +240,192 @@ export default function NewCampaignPage() {
         </Alert>
       )}
 
-             <div className="space-y-6">
-         {/* Top Section - Two Columns */}
-         <div className="grid gap-6 lg:grid-cols-2">
-           {/* Left Column - Template Selection and Campaign Details */}
-           <div className="space-y-6">
-             {/* Template Selection */}
-             <Card className="border-gray-200 bg-white">
-               <CardHeader>
-                 <CardTitle className="text-gray-900">Select Template</CardTitle>
-                 <CardDescription className="text-gray-600">Choose a template to start from (optional)</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <select
-                   className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-200 bg-white"
-                   value={selectedTemplateId}
-                   onChange={e => setSelectedTemplateId(e.target.value)}
-                   disabled={loadingTemplates || templates.length === 0}
-                 >
-                   <option value="">-- No template --</option>
-                   {templates.map(t => (
-                     <option key={t.id} value={t.id}>
-                       {t.name} {t.isHtml ? "(HTML)" : "(Rich Text)"}
-                     </option>
-                   ))}
-                 </select>
-               </CardContent>
-             </Card>
+      {/* Tabs */}
+      <Tabs defaultValue="campaign" className="space-y-8">
+        <TabsList className="grid w-full grid-cols-3 max-w-md bg-transparent p-0 h-auto">
+          <TabsTrigger
+            value="campaign"
+            className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 bg-white"
+          >
+            <Rocket className="h-4 w-4" />
+            Campaign
+          </TabsTrigger>
+          <TabsTrigger
+            value="content"
+            className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 bg-white ml-2"
+          >
+            <FileText className="h-4 w-4" />
+            Content
+          </TabsTrigger>
+          <TabsTrigger
+            value="archive"
+            className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 bg-white ml-2"
+          >
+            <Archive className="h-4 w-4" />
+            Archive
+          </TabsTrigger>
+        </TabsList>
 
-             {/* Campaign Details */}
-             <Card className="border-gray-200 bg-white shadow-sm">
-               <CardHeader>
-                 <CardTitle className="text-gray-900">Campaign Details</CardTitle>
-                 <CardDescription className="text-gray-600">Set up your campaign title and email subject</CardDescription>
-               </CardHeader>
-               <CardContent className="space-y-4">
-                 <div className="space-y-2">
-                   <Label htmlFor="title" className="text-gray-700">
-                     Campaign Title
-                   </Label>
-                   <Input
-                     id="title"
-                     placeholder="e.g., Weekly Newsletter #48"
-                     value={title}
-                     onChange={(e) => setTitle(e.target.value)}
-                     className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                   />
-                   <p className="text-sm text-gray-500">This is for your internal reference only</p>
-                 </div>
-                 <div className="space-y-2">
-                   <Label htmlFor="subject" className="text-gray-700">
-                     Email Subject
-                   </Label>
-                   <Input
-                     id="subject"
-                     placeholder="e.g., This week's updates and insights"
-                     value={subject}
-                     onChange={(e) => setSubject(e.target.value)}
-                     className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                   />
-                   <p className="text-sm text-gray-500">This will be the subject line of your email</p>
-                 </div>
-               </CardContent>
-             </Card>
-           </div>
-           <div className="space-y-6">
-             <Card className="border-gray-200 bg-white shadow-sm">
-               <CardHeader>
-                 <CardTitle className="text-gray-900">Test Email</CardTitle>
-                 <CardDescription className="text-gray-600">Send a test email before sending to all subscribers</CardDescription>
-               </CardHeader>
-               <CardContent className="space-y-3">
-                 <div className="space-y-2">
-                   <Label htmlFor="testEmail" className="text-sm text-gray-700">
-                     Test Email Address
-                   </Label>
-                   <Input
-                     id="testEmail"
-                     type="email"
-                     placeholder="Enter email address for testing"
-                     value={testEmail}
-                     onChange={(e) => setTestEmail(e.target.value)}
-                     className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                   />
-                 </div>
-                 <Button
-                   variant="outline"
-                   className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 bg-transparent"
-                   onClick={handleSendTest}
-                   disabled={isLoading || !testEmail || !subject || !getFinalContent()}
-                 >
-                   <TestTube className="mr-2 h-4 w-4" />
-                   {isLoading ? "Sending..." : "Send Test Email"}
-                 </Button>
-               </CardContent>
-             </Card>
-             <Card className="border-gray-200 bg-white shadow-sm">
-               <CardHeader>
-                 <CardTitle className="text-gray-900">Campaign Status</CardTitle>
-               </CardHeader>
-               <CardContent className="space-y-4">
-                 <div className="flex items-center justify-between">
-                   <span className="text-sm text-gray-700">Status</span>
-                   <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                     Draft
-                   </Badge>
-                 </div>
-                 <div className="flex items-center justify-between">
-                   <span className="text-sm text-gray-700">Recipients</span>
-                   <span className="text-sm font-medium text-gray-900">
-                     {isLoadingSubscribers ? "Loading..." : `${activeSubscriberEmails.length} subscribers`}
-                   </span>
-                 </div>
-                 <div className="flex items-center justify-between">
-                   <span className="text-sm text-gray-700">Created</span>
-                   <span className="text-sm text-gray-500">Just now</span>
-                 </div>
-                 <div className="flex items-center justify-between">
-                   <span className="text-sm text-gray-700">Word Count</span>
-                   <span className="text-sm text-gray-500">
-                     {
-                       getPlainTextContent(getFinalContent())
-                         .split(" ")
-                         .filter((word) => word.length > 0).length
-                     }{" "}
-                     words
-                   </span>
-                 </div>
-                 <div className="flex items-center justify-between">
-                   <span className="text-sm text-gray-700">Editor Mode</span>
-                   <Badge variant="outline" className="text-xs">
-                     {useRawHtml ? "Raw HTML" : "Rich Text"}
-                   </Badge>
-                 </div>
-               </CardContent>
-             </Card>
+        <TabsContent value="campaign" className="mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Campaign Form */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="Manish Tamang"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
+                />
+              </div>
 
-             {/* Actions */}
-             <Card className="border-gray-200 bg-white shadow-sm">
-               <CardHeader>
-                 <CardTitle className="text-gray-900">Actions</CardTitle>
-                 <CardDescription className="text-gray-600">Test and send your campaign</CardDescription>
-               </CardHeader>
-               <CardContent className="space-y-3">
-                 <Button
-                   className="w-full bg-gray-900 text-white hover:bg-gray-800"
-                   onClick={handleSendCampaign}
-                   disabled={isLoading || !title || !subject || !getFinalContent() || activeSubscriberEmails.length === 0}
-                 >
-                   <Send className="mr-2 h-4 w-4" />
-                   {isLoading ? "Sending..." : "Send Campaign"}
-                 </Button>
-                 <Button
-                   className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 bg-transparent"
-                   onClick={handleSaveAsDraft}
-                   disabled={isLoading || !title || !subject || !getFinalContent()}
-                 >
-                   <Save className="mr-2 h-4 w-4" />
-                   {isLoading ? "Saving..." : "Save as Draft"}
-                 </Button>
-                 <p className="text-xs text-gray-500">
-                   {activeSubscriberEmails.length === 0 
-                     ? "No active subscribers found. Add subscribers first."
-                     : `This will send the campaign to all ${activeSubscriberEmails.length} active subscribers`
-                   }
-                 </p>
-               </CardContent>
-             </Card>
-           </div>
-         </div>
+              <div className="space-y-2">
+                <Label htmlFor="subject" className="text-sm font-medium text-gray-700">
+                  Subject
+                </Label>
+                <Input
+                  id="subject"
+                  placeholder="Hello Test Email"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
+                />
+              </div>
 
-         {/* Email Content - Full Width */}
-         <Card className="border-gray-200 bg-white shadow-sm">
-           <CardHeader>
-             <div className="flex items-center justify-between">
-               <div>
-                 <CardTitle className="text-gray-900">Email Content</CardTitle>
-                 <CardDescription className="text-gray-600">
-                   {useRawHtml ? "Write your HTML email content" : "Create your newsletter content with our drag-and-drop editor"}
-                 </CardDescription>
-               </div>
-               <div className="flex items-center space-x-2">
-                 <Type className="h-4 w-4 text-gray-500" />
-                 <span className="text-sm text-gray-600">Rich Text</span>
-                 <Switch
-                   checked={useRawHtml}
-                   onCheckedChange={setUseRawHtml}
-                 />
-                 <Code className="h-4 w-4 text-gray-500" />
-                 <span className="text-sm text-gray-600">Raw HTML</span>
-               </div>
-             </div>
-           </CardHeader>
-           <div className="h-[580px] w-full">
-             {useRawHtml ? (
-               <HtmlCodeEditor
-                 value={rawHtml}
-                 onChange={setRawHtml}
-                 placeholder="<html><body><h1>Your HTML content here...</h1></body></html>"
-               />
-             ) : (
-               <EmailBuilder
-                 onSave={(html) => setContent(html)}
-                 onExportToHtml={handleExportToHtml}
-                 className="w-full h-full"
-               />
-             )}
-           </div>
-         </Card>
-      </div>
+              <div className="space-y-2">
+                <Label htmlFor="fromAddress" className="text-sm font-medium text-gray-700">
+                  From address
+                </Label>
+                <Input
+                  id="fromAddress"
+                  value="newsletter@manishtamang.com"
+                  disabled
+                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200 bg-gray-50"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-sm font-medium text-gray-700">Lists</Label>
+
+                {/* Selected Lists */}
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1"
+                  >
+                    Default list
+                    <button className="ml-2 hover:text-blue-900">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                </div>
+
+                {/* Add New List */}
+                <Input
+                  placeholder="Lists to send to"
+                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Format</Label>
+                <select className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:border-gray-300 focus:ring-1 focus:ring-gray-200">
+                  <option value="rich-text">Rich text</option>
+                  <option value="html">HTML</option>
+                  <option value="plain-text">Plain text</option>
+                </select>
+              </div>
+
+              <Button
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg"
+                onClick={handleSendCampaign}
+                disabled={isLoading || !title || !subject || !getFinalContent() || activeSubscriberEmails.length === 0}
+              >
+                Continue
+              </Button>
+            </div>
+
+            {/* Right Column - Send Test Message */}
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                <h3 className="font-medium text-gray-900">Send test message</h3>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">E-mails</Label>
+                  <Input
+                    placeholder="Enter email addresses"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
+                  />
+                  <p className="text-xs text-gray-500">Hit Enter after typing an address to add multiple recipients.</p>
+                </div>
+
+                <Button
+                  onClick={handleSendTest}
+                  disabled={isLoading || !testEmail || !subject || !getFinalContent()}
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white"
+                >
+                  Send
+                </Button>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="content" className="mt-8">
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">EMAIL CONTENT</h2>
+                <p className="text-gray-600 mt-2">
+                  {useRawHtml ? "Write your HTML email content" : "Create your newsletter content"}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Type className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Rich Text</span>
+                <Switch
+                  checked={useRawHtml}
+                  onCheckedChange={setUseRawHtml}
+                />
+                <Code className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Raw HTML</span>
+              </div>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg">
+              <div className="h-[600px] w-full">
+                {useRawHtml ? (
+                  <HtmlCodeEditor
+                    value={rawHtml}
+                    onChange={setRawHtml}
+                    placeholder="<html><body><h1>Your HTML content here...</h1></body></html>"
+                  />
+                ) : (
+                  <EmailBuilder
+                    onSave={(html) => setContent(html)}
+                    onExportToHtml={handleExportToHtml}
+                    className="w-full h-full"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="archive" className="mt-8">
+          <div className="text-center py-12">
+            <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Archive Settings</h3>
+            <p className="text-gray-600">Configure archiving options</p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
