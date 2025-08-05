@@ -3,23 +3,21 @@
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Send, TestTube, AlertCircle, Code, Type, Eye, X, Save, Rocket, FileText, Archive } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { ArrowLeft, X, Zap, FileText, Archive, ArrowUpRight, Send, TestTube, AlertCircle, Code, Type, Eye, Save, Rocket } from "lucide-react"
 import { EmailBuilder } from "@/components/EmailBuilder"
 import { HtmlCodeEditor } from "@/components/html-code-editor"
 import { useEmail } from "@/hooks/use-email"
 import { useSubscribers } from "@/hooks/use-subscribers"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useTemplates } from "@/hooks/use-templates"
 import { useCampaigns } from "@/hooks/use-campaigns"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function NewCampaignPage() {
   const [title, setTitle] = useState("")
@@ -216,20 +214,40 @@ export default function NewCampaignPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-6">
+    <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
       {/* Header */}
-      <div className="mb-8">
-        <Button variant="ghost" size="sm" asChild className="text-gray-600 hover:text-black p-0 mb-4">
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" asChild className="text-gray-600 hover:text-black p-0">
           <Link href="/campaigns">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Campaigns
           </Link>
         </Button>
-        <h1 className="text-3xl font-medium tracking-tight">New campaign</h1>
+
+        <h1 className="text-4xl font-medium tracking-tight">New Campaign</h1>
+        <p className="text-lg text-gray-600 max-w-2xl">
+          Create and send a new newsletter campaign to your subscribers. Design your content and track performance
+          metrics.
+        </p>
+
+        <div className="flex items-center gap-4 pt-4">
+          <Button
+            onClick={handleSendCampaign}
+            disabled={isLoading || !title || !subject || !getFinalContent() || activeSubscriberEmails.length === 0}
+            className="bg-black text-white hover:bg-gray-800 rounded-full px-6"
+          >
+            {isLoading ? "Sending..." : "Send Campaign"}
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-gray-600">{activeSubscriberEmails.length} recipients ready</span>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error}
@@ -241,191 +259,292 @@ export default function NewCampaignPage() {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="campaign" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-3 max-w-md bg-transparent p-0 h-auto">
-          <TabsTrigger
-            value="campaign"
-            className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 bg-white"
-          >
-            <Rocket className="h-4 w-4" />
-            Campaign
-          </TabsTrigger>
-          <TabsTrigger
-            value="content"
-            className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 bg-white ml-2"
-          >
-            <FileText className="h-4 w-4" />
-            Content
-          </TabsTrigger>
-          <TabsTrigger
-            value="archive"
-            className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 bg-white ml-2"
-          >
-            <Archive className="h-4 w-4" />
-            Archive
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-8">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">CAMPAIGN SETUP</h2>
 
-        <TabsContent value="campaign" className="mt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Campaign Form */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="Manish Tamang"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                />
-              </div>
+        <Tabs defaultValue="campaign" className="space-y-8">
+          <TabsList className="grid w-full grid-cols-3 max-w-md bg-transparent p-0 h-auto">
+            <TabsTrigger
+              value="campaign"
+              className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white"
+            >
+              <Zap className="h-4 w-4" />
+              Campaign
+            </TabsTrigger>
+            <TabsTrigger
+              value="content"
+              className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+            >
+              <FileText className="h-4 w-4" />
+              Content
+            </TabsTrigger>
+            <TabsTrigger
+              value="archive"
+              className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+            >
+              <Archive className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="space-y-2">
-                <Label htmlFor="subject" className="text-sm font-medium text-gray-700">
-                  Subject
-                </Label>
-                <Input
-                  id="subject"
-                  placeholder="Hello Test Email"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="fromAddress" className="text-sm font-medium text-gray-700">
-                  From address
-                </Label>
-                <Input
-                  id="fromAddress"
-                  value="newsletter@manishtamang.com"
-                  disabled
-                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200 bg-gray-50"
-                />
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-sm font-medium text-gray-700">Lists</Label>
-
-                {/* Selected Lists */}
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1"
-                  >
-                    Default list
-                    <button className="ml-2 hover:text-blue-900">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
+          <TabsContent value="campaign" className="mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+              {/* Left Column - Campaign Form */}
+              <div className="lg:col-span-2 space-y-8">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium">
+                    Campaign Name
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Weekly Newsletter #48"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                  <p className="text-sm text-gray-500">Internal reference name</p>
                 </div>
-
-                {/* Add New List */}
-                <Input
-                  placeholder="Lists to send to"
-                  className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Format</Label>
-                <select className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:border-gray-300 focus:ring-1 focus:ring-gray-200">
-                  <option value="rich-text">Rich text</option>
-                  <option value="html">HTML</option>
-                  <option value="plain-text">Plain text</option>
-                </select>
-              </div>
-
-              <Button
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg"
-                onClick={handleSendCampaign}
-                disabled={isLoading || !title || !subject || !getFinalContent() || activeSubscriberEmails.length === 0}
-              >
-                Continue
-              </Button>
-            </div>
-
-            {/* Right Column - Send Test Message */}
-            <div className="space-y-6">
-              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                <h3 className="font-medium text-gray-900">Send test message</h3>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">E-mails</Label>
+                  <Label htmlFor="subject" className="text-sm font-medium">
+                    Email Subject
+                  </Label>
                   <Input
-                    placeholder="Enter email addresses"
-                    value={testEmail}
-                    onChange={(e) => setTestEmail(e.target.value)}
-                    className="border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
+                    id="subject"
+                    placeholder="e.g., This week's updates and insights"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
-                  <p className="text-xs text-gray-500">Hit Enter after typing an address to add multiple recipients.</p>
+                  <p className="text-sm text-gray-500">What subscribers will see</p>
                 </div>
 
-                <Button
-                  onClick={handleSendTest}
-                  disabled={isLoading || !testEmail || !subject || !getFinalContent()}
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                >
-                  Send
-                </Button>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="content" className="mt-8">
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">EMAIL CONTENT</h2>
-                <p className="text-gray-600 mt-2">
-                  {useRawHtml ? "Write your HTML email content" : "Create your newsletter content"}
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Type className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-600">Rich Text</span>
-                <Switch
-                  checked={useRawHtml}
-                  onCheckedChange={setUseRawHtml}
-                />
-                <Code className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-600">Raw HTML</span>
-              </div>
-            </div>
-
-            <div className="border border-gray-200 rounded-lg">
-              <div className="h-[600px] w-full">
-                {useRawHtml ? (
-                  <HtmlCodeEditor
-                    value={rawHtml}
-                    onChange={setRawHtml}
-                    placeholder="<html><body><h1>Your HTML content here...</h1></body></html>"
+                <div className="space-y-2">
+                  <Label htmlFor="fromAddress" className="text-sm font-medium">
+                    From Address
+                  </Label>
+                  <Input
+                    id="fromAddress"
+                    value="newsletter@manishtamang.com"
+                    disabled
+                    className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
-                ) : (
-                  <EmailBuilder
-                    onSave={(html) => setContent(html)}
-                    onExportToHtml={handleExportToHtml}
-                    className="w-full h-full"
+                  <p className="text-sm text-gray-500">Sender email address</p>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium">Subscriber Lists</Label>
+
+                  {/* Selected Lists */}
+                  <div className="flex flex-wrap gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1"
+                    >
+                      Default list
+                      <button className="ml-2 hover:text-gray-900">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  </div>
+
+                  {/* Add New List */}
+                  <Input
+                    placeholder="Add subscriber list..."
+                    className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
-                )}
+                  <p className="text-sm text-gray-500">Press Enter to add a list</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Email Format</Label>
+                  <Select defaultValue="rich-text">
+                    <SelectTrigger className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rich-text">Rich text</SelectItem>
+                      <SelectItem value="html">HTML</SelectItem>
+                      <SelectItem value="plain-text">Plain text</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Right Column - Send Test Message */}
+              <div className="space-y-8">
+                <div className="space-y-6">
+                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">TEST EMAIL</h3>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Test Recipients</Label>
+                      <Input
+                        placeholder="Enter email addresses"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                        className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                      <p className="text-xs text-gray-500">Press Enter to add multiple recipients</p>
+                    </div>
+
+                    <Button
+                      onClick={handleSendTest}
+                      disabled={isLoading || !testEmail || !subject || !getFinalContent()}
+                      className="w-full bg-gray-900 hover:bg-gray-800 text-white"
+                    >
+                      Send Test Email
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="pt-8 border-t border-gray-100">
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Campaign Status</div>
+                    <div className="text-sm text-gray-500">Draft - Not sent</div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="archive" className="mt-8">
-          <div className="text-center py-12">
-            <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Archive Settings</h3>
-            <p className="text-gray-600">Configure archiving options</p>
-          </div>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="content" className="mt-8">
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">EMAIL CONTENT</h2>
+                  <p className="text-gray-600 mt-2">
+                    {useRawHtml ? "Write your HTML email content" : "Create your newsletter content"}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Type className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">Rich Text</span>
+                  <Switch
+                    checked={useRawHtml}
+                    onCheckedChange={setUseRawHtml}
+                  />
+                  <Code className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">Raw HTML</span>
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg">
+                <div className="h-[600px] w-full">
+                  {useRawHtml ? (
+                    <HtmlCodeEditor
+                      value={rawHtml}
+                      onChange={setRawHtml}
+                      placeholder="<html><body><h1>Your HTML content here...</h1></body></html>"
+                    />
+                  ) : (
+                    <EmailBuilder
+                      onSave={(html) => setContent(html)}
+                      onExportToHtml={handleExportToHtml}
+                      className="w-full h-full"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">PREVIEW</h3>
+
+                <div className="max-w-2xl">
+                  <div className="border border-gray-200 rounded-lg bg-white">
+                    <div className="border-b border-gray-100 p-6">
+                      <div className="font-medium text-lg">{subject || "Email Subject"}</div>
+                      <div className="text-gray-500 text-sm mt-1">from newsletter@manishtamang.com</div>
+                    </div>
+                    <div className="p-6">
+                      {getFinalContent() ? (
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: getFinalContent() }} />
+                      ) : (
+                        <p className="text-gray-500 italic">Your email content will appear here...</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="archive" className="mt-8">
+            <div className="space-y-8">
+              <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">CAMPAIGN SETTINGS</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Campaign Priority</Label>
+                    <Select defaultValue="normal">
+                      <SelectTrigger className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Tracking</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Track opens</span>
+                        <input type="checkbox" defaultChecked className="rounded" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Track clicks</span>
+                        <input type="checkbox" defaultChecked className="rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Schedule</Label>
+                    <Select defaultValue="now">
+                      <SelectTrigger className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="now">Send now</SelectItem>
+                        <SelectItem value="schedule">Schedule for later</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Tags</Label>
+                    <Input
+                      placeholder="Add tags (comma separated)"
+                      className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <p className="text-sm text-gray-500">Help organize your campaigns</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Footer */}
+      <div className="pt-8 border-t border-gray-100">
+        <div className="text-sm text-gray-500">
+          Draft saved:{" "}
+          {new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZoneName: "short",
+          })}
+        </div>
+      </div>
     </div>
   )
 }
