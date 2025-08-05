@@ -33,7 +33,7 @@ export default function AnalyticsPage() {
   ]
 
   return (
-    <div className="max-w-4xl mx-auto space-y-16 py-8">
+    <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
       {/* Header */}
       <div className="space-y-4">
         <h1 className="text-4xl font-medium tracking-tight">Analytics</h1>
