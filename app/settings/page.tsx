@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
-import { CheckCircle, AlertCircle, Mail, Settings, Key, Globe } from "lucide-react"
+import { ArrowUpRight, CheckCircle, AlertCircle, Mail, Settings, Key, Globe } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
@@ -79,208 +77,222 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Configure your newsletter application settings</p>
+    <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
+      {/* Header */}
+      <div className="space-y-4">
+        <h1 className="text-4xl font-medium tracking-tight">Settings</h1>
+        <p className="text-lg text-gray-600 max-w-2xl">
+          Configure your newsletter application settings, email delivery, and privacy options to optimize your
+          campaigns.
+        </p>
+
+        <div className="flex items-center gap-4 pt-4">
+          <Button 
+            onClick={handleSaveSettings} 
+            disabled={isLoading}
+            className="bg-black text-white hover:bg-gray-800 rounded-full px-6"
+          >
+            {isLoading ? "Saving..." : "Save Settings"}
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-gray-600">
+              {apiStatus === "connected" ? "All systems operational" : "Checking status..."}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Key className="h-5 w-5 text-gray-600" />
-                <CardTitle>API Configuration</CardTitle>
-              </div>
-              <CardDescription>Configure your Resend.com API settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="apiKey">Resend API Key</Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder="re_123456789..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Get your API key from{" "}
-                  <a
-                    href="https://resend.com/api-keys"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Resend.com
-                  </a>
-                </p>
-              </div>
+      {/* API Configuration */}
+      <div className="space-y-8">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">API CONFIGURATION</h2>
 
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">API Status</span>
-                {getApiStatusBadge()}
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={checkApiStatus}
-                disabled={apiStatus === "checking"}
-              >
-                {apiStatus === "checking" ? "Checking..." : "Test Connection"}
-              </Button>
-
-              {apiStatus === "error" && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Unable to connect to Resend API. Please check your API key and try again.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {apiStatus === "connected" && (
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Successfully connected to Resend API. You can now send emails.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-gray-600" />
-                <CardTitle>Email Settings</CardTitle>
-              </div>
-              <CardDescription>Configure your email sending preferences</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fromEmail">From Email Address</Label>
-                <Input
-                  id="fromEmail"
-                  type="email"
-                  placeholder="newsletter@manishtamang.com"
-                  value={fromEmail}
-                  onChange={(e) => setFromEmail(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  This email will appear as the sender of your newsletters
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="replyToEmail">Reply-To Email Address</Label>
-                <Input
-                  id="replyToEmail"
-                  type="email"
-                  placeholder="support@manishtamang.com"
-                  value={replyToEmail}
-                  onChange={(e) => setReplyToEmail(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Replies to your emails will be sent to this address
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-gray-600" />
-                <CardTitle>General Settings</CardTitle>
-              </div>
-              <CardDescription>Configure general application settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications about campaign performance
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Auto-save Drafts</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically save campaign drafts
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Analytics Tracking</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Track email opens and clicks
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-gray-600" />
-                <CardTitle>Domain Settings</CardTitle>
-              </div>
-              <CardDescription>Configure your sending domain</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Domain Status</Label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Not configured</Badge>
-                  <span className="text-sm text-muted-foreground">
-                    Configure your domain in Resend dashboard
-                  </span>
-                </div>
-              </div>
-
-              <Button variant="outline" className="w-full">
-                Configure Domain
-              </Button>
-
-              <p className="text-sm text-muted-foreground">
-                Configure your domain in the{" "}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="apiKey" className="text-sm font-medium">
+                Resend API Key
+              </Label>
+              <Input
+                id="apiKey"
+                type="password"
+                placeholder="re_123456789..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <p className="text-sm text-gray-500">
+                Get your API key from{" "}
                 <a
-                  href="https://resend.com/domains"
+                  href="https://resend.com/api-keys"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
                 >
-                  Resend dashboard
-                </a>{" "}
-                to improve deliverability.
+                  Resend.com
+                </a>
               </p>
-            </CardContent>
-          </Card>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">API Status</span>
+              {getApiStatusBadge()}
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={checkApiStatus}
+              disabled={apiStatus === "checking"}
+              className="rounded-full"
+            >
+              {apiStatus === "checking" ? "Checking..." : "Test Connection"}
+            </Button>
+          </div>
+
+          <div className="space-y-6">
+            {apiStatus === "error" && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Unable to connect to Resend API. Please check your API key and try again.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {apiStatus === "connected" && (
+              <div className="p-6 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div>
+                    <div className="font-medium text-green-900">API Connection Active</div>
+                    <div className="text-sm text-green-700">Successfully connected to Resend API</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSaveSettings} disabled={isLoading}>
-          {isLoading ? "Saving..." : "Save Settings"}
-        </Button>
+      {/* Email Configuration */}
+      <div className="space-y-8">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">EMAIL CONFIGURATION</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fromEmail" className="text-sm font-medium">
+                From Email Address
+              </Label>
+              <Input
+                id="fromEmail"
+                type="email"
+                placeholder="newsletter@manishtamang.com"
+                value={fromEmail}
+                onChange={(e) => setFromEmail(e.target.value)}
+                className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <p className="text-sm text-gray-500">
+                This email will appear as the sender of your newsletters
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="replyToEmail" className="text-sm font-medium">
+                Reply-To Email Address
+              </Label>
+              <Input
+                id="replyToEmail"
+                type="email"
+                placeholder="support@manishtamang.com"
+                value={replyToEmail}
+                onChange={(e) => setReplyToEmail(e.target.value)}
+                className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <p className="text-sm text-gray-500">Where replies will be sent</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* General Settings */}
+      <div className="space-y-8">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">GENERAL SETTINGS</h2>
+
+        <div className="space-y-8">
+          <div className="flex items-center justify-between py-4">
+            <div className="space-y-1">
+              <div className="font-medium">Email Notifications</div>
+              <div className="text-sm text-gray-500">Receive notifications about campaign performance</div>
+            </div>
+            <Switch defaultChecked />
+          </div>
+
+          <div className="flex items-center justify-between py-4">
+            <div className="space-y-1">
+              <div className="font-medium">Auto-save Drafts</div>
+              <div className="text-sm text-gray-500">Automatically save campaign drafts</div>
+            </div>
+            <Switch defaultChecked />
+          </div>
+
+          <div className="flex items-center justify-between py-4">
+            <div className="space-y-1">
+              <div className="font-medium">Analytics Tracking</div>
+              <div className="text-sm text-gray-500">Track email opens and clicks</div>
+            </div>
+            <Switch defaultChecked />
+          </div>
+        </div>
+      </div>
+
+      {/* Domain Settings */}
+      <div className="space-y-8">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">DOMAIN SETTINGS</h2>
+
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Domain Status</Label>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">Not configured</Badge>
+              <span className="text-sm text-gray-500">
+                Configure your domain in Resend dashboard
+              </span>
+            </div>
+          </div>
+
+          <Button variant="outline" className="rounded-full">
+            Configure Domain
+          </Button>
+
+          <p className="text-sm text-gray-500">
+            Configure your domain in the{" "}
+            <a
+              href="https://resend.com/domains"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Resend dashboard
+            </a>{" "}
+            to improve deliverability.
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="pt-8 border-t border-gray-100">
+        <div className="text-sm text-gray-500">
+          Last updated:{" "}
+          {new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZoneName: "short",
+          })}
+        </div>
       </div>
     </div>
   )
