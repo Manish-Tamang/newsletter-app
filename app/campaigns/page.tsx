@@ -2,12 +2,10 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, MoreHorizontal, Edit, Copy, BarChart3, Trash2, Eye } from "lucide-react"
+import { ArrowUpRight, TrendingUp, Mail, Send, Archive, BarChart3 } from "lucide-react"
 import Link from "next/link"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useCampaigns } from "@/hooks/use-campaigns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -32,64 +30,86 @@ export default function CampaignsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "sent":
-        return <Badge variant="default" className="bg-green-100 text-green-800">Sent</Badge>
+        return <Badge className="bg-green-100 text-green-700">Sent</Badge>
       case "scheduled":
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Scheduled</Badge>
       case "draft":
       default:
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Draft</Badge>
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-700">Draft</Badge>
     }
   }
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
-            <p className="text-muted-foreground">Manage your newsletter campaigns</p>
+      <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-6 w-96" />
+          <div className="flex items-center gap-4 pt-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-4 w-48" />
           </div>
-          <Skeleton className="h-10 w-32" />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>All Campaigns</CardTitle>
-            <CardDescription>View and manage all your newsletter campaigns</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4">
-                  <Skeleton className="h-4 flex-1" />
-                  <Skeleton className="h-6 w-16" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-8 w-8" />
+        <div className="space-y-8">
+          <Skeleton className="h-4 w-24" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          <Skeleton className="h-4 w-24" />
+          <div className="space-y-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-64" />
+                  <Skeleton className="h-4 w-48" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <div className="flex items-center gap-8">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
+  const draftCampaigns = campaigns.filter((c) => c.status === "draft")
+  const sentCampaigns = campaigns.filter((c) => c.status === "sent")
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
-          <p className="text-muted-foreground">Manage your newsletter campaigns</p>
+    <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
+      {/* Header */}
+      <div className="space-y-4">
+        <h1 className="text-4xl font-medium tracking-tight">Campaigns</h1>
+        <p className="text-lg text-gray-600 max-w-2xl">
+          Create, manage, and track your newsletter campaigns. Monitor performance metrics and optimize your email
+          marketing strategy.
+        </p>
+
+        <div className="flex items-center gap-4 pt-4">
+          <Button asChild className="bg-black text-white hover:bg-gray-800 rounded-full px-6">
+            <Link href="/campaigns/new">
+              New Campaign
+              <ArrowUpRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-gray-600">{campaigns.length} campaigns this month</span>
+          </div>
         </div>
-        <Button asChild>
-          <Link href="/campaigns/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Campaign
-          </Link>
-        </Button>
       </div>
 
       {error && (
@@ -100,99 +120,224 @@ export default function CampaignsPage() {
         </Alert>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Campaigns</CardTitle>
-          <CardDescription>View and manage all your newsletter campaigns</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {campaigns.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No campaigns found. Create your first campaign to get started.</p>
+      {/* Quick Stats */}
+      <div className="space-y-8">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">PERFORMANCE</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="space-y-2">
+            <div className="text-3xl font-medium">27.2%</div>
+            <div className="text-gray-600">Average Open Rate</div>
+            <div className="flex items-center gap-1 text-sm">
+              <TrendingUp className="h-3 w-3 text-green-600" />
+              <span className="text-green-600">+2.4%</span>
+              <span className="text-gray-500">from last month</span>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Campaign</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Sent Date</TableHead>
-                  <TableHead>Open Rate</TableHead>
-                  <TableHead>Click Rate</TableHead>
-                  <TableHead>Subscribers</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {campaigns.map((campaign) => (
-                  <TableRow key={campaign.id}>
-                    <TableCell>
-                      <div className="font-medium">{campaign.title}</div>
-                      <div className="text-sm text-muted-foreground">{campaign.subject}</div>
-                    </TableCell>
-                    <TableCell>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-3xl font-medium">3.9%</div>
+            <div className="text-gray-600">Average Click Rate</div>
+            <div className="flex items-center gap-1 text-sm">
+              <TrendingUp className="h-3 w-3 text-green-600" />
+              <span className="text-green-600">+0.7%</span>
+              <span className="text-gray-500">from last month</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-3xl font-medium">$8,730</div>
+            <div className="text-gray-600">Total Revenue</div>
+            <div className="flex items-center gap-1 text-sm">
+              <TrendingUp className="h-3 w-3 text-green-600" />
+              <span className="text-green-600">+18.2%</span>
+              <span className="text-gray-500">from last month</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Campaigns Tabs */}
+      <div className="space-y-8">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">CAMPAIGNS</h2>
+
+        <Tabs defaultValue="all" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 max-w-lg bg-transparent p-0 h-auto">
+            <TabsTrigger
+              value="all"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white"
+            >
+              <Mail className="h-4 w-4" />
+              All
+            </TabsTrigger>
+            <TabsTrigger
+              value="sent"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+            >
+              <Send className="h-4 w-4" />
+              Sent
+            </TabsTrigger>
+            <TabsTrigger
+              value="drafts"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+            >
+              <Archive className="h-4 w-4" />
+              Drafts
+            </TabsTrigger>
+            <TabsTrigger
+              value="analytics"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="space-y-6">
+            {campaigns.length === 0 ? (
+              <div className="text-center py-12">
+                <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns</h3>
+                <p className="text-gray-600">Create your first campaign to get started</p>
+              </div>
+            ) : (
+              campaigns.map((campaign) => (
+                <div
+                  key={campaign.id}
+                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="space-y-2">
+                    <div className="font-medium text-lg">{campaign.title}</div>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
                       {getStatusBadge(campaign.status)}
-                    </TableCell>
-                    <TableCell>
-                      {campaign.sentDate
-                        ? new Date(campaign.sentDate).toLocaleDateString("en-US", {
-                            year: "numeric",
+                      {campaign.sentDate && (
+                        <span>
+                          Sent{" "}
+                          {new Date(campaign.sentDate).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "-"}
-                    </TableCell>
-                    <TableCell>{campaign.openRate ? `${campaign.openRate}%` : "-"}</TableCell>
-                    <TableCell>{campaign.clickRate ? `${campaign.clickRate}%` : "-"}</TableCell>
-                    <TableCell>{campaign.subscribers ? campaign.subscribers.toLocaleString() : "-"}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/campaigns/${campaign.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/campaigns/${campaign.id}/edit`}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <BarChart3 className="mr-2 h-4 w-4" />
-                            View Analytics
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => handleDelete(campaign.id)}
-                            disabled={deletingId === campaign.id}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {deletingId === campaign.id ? "Deleting..." : "Delete"}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                            year: "numeric",
+                          })}
+                        </span>
+                      )}
+                      {campaign.subscribers && <span>{campaign.subscribers.toLocaleString()} recipients</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-8 text-sm">
+                    {campaign.openRate && (
+                      <div className="text-right">
+                        <div className="font-medium text-lg">{campaign.openRate}%</div>
+                        <div className="text-gray-500">Opens</div>
+                      </div>
+                    )}
+                    {campaign.clickRate && (
+                      <div className="text-right">
+                        <div className="font-medium text-lg">{campaign.clickRate}%</div>
+                        <div className="text-gray-500">Clicks</div>
+                      </div>
+                    )}
+                    {!campaign.openRate && !campaign.clickRate && <div className="text-gray-400">Draft</div>}
+                  </div>
+                </div>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="sent" className="space-y-6">
+            {sentCampaigns.length > 0 ? (
+              sentCampaigns.map((campaign) => (
+                <div
+                  key={campaign.id}
+                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="space-y-2">
+                    <div className="font-medium text-lg">{campaign.title}</div>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <Badge className="bg-green-100 text-green-700">sent</Badge>
+                      <span>
+                        Sent{" "}
+                        {new Date(campaign.sentDate!).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                      <span>{campaign.subscribers!.toLocaleString()} recipients</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-8 text-sm">
+                    <div className="text-right">
+                      <div className="font-medium text-lg">{campaign.openRate}%</div>
+                      <div className="text-gray-500">Opens</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-lg">{campaign.clickRate}%</div>
+                      <div className="text-gray-500">Clicks</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <Send className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No sent campaigns</h3>
+                <p className="text-gray-600">Your sent campaigns will appear here</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="drafts" className="space-y-6">
+            {draftCampaigns.length > 0 ? (
+              draftCampaigns.map((campaign) => (
+                <div
+                  key={campaign.id}
+                  className="flex items-center justify-between py-6 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="space-y-2">
+                    <div className="font-medium text-lg">{campaign.title}</div>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <Badge variant="secondary">draft</Badge>
+                      <span>Not sent yet</span>
+                    </div>
+                  </div>
+                  <div className="text-gray-400">Draft</div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No drafts</h3>
+                <p className="text-gray-600">All your campaigns have been sent</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="text-center py-12">
+              <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Campaign Analytics</h3>
+              <p className="text-gray-600">Detailed performance metrics for your campaigns</p>
+              <Button asChild className="mt-4 bg-black text-white hover:bg-gray-800">
+                <Link href="/analytics">View Full Analytics</Link>
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Footer */}
+      <div className="pt-8 border-t border-gray-100">
+        <div className="text-sm text-gray-500">
+          Last updated:{" "}
+          {new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZoneName: "short",
+          })}
+        </div>
+      </div>
     </div>
   )
 }
