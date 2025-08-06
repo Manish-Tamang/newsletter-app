@@ -17,15 +17,37 @@ interface EmailBuilderProps {
   onExportToHtml?: (html: string) => void
   initialDesign?: any
   className?: string
+  campaignId?: string
+  templateId?: string
+  autoSave?: boolean
 }
 
-export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className }: EmailBuilderProps) {
+export function EmailBuilder({ 
+  onSave, 
+  onExportToHtml, 
+  initialDesign, 
+  className,
+  campaignId,
+  templateId,
+  autoSave = true
+}: EmailBuilderProps) {
   const emailEditorRef = useRef<any>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [previewHtml, setPreviewHtml] = useState("")
   const [isExporting, setIsExporting] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [EmailEditorComponent, setEmailEditorComponent] = useState<any>(null)
+  const [lastSavedDesign, setLastSavedDesign] = useState<any>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<string>("")
+  const [tempTemplateId, setTempTemplateId] = useState<string>("")
+
+  // Generate a temporary template ID for saving designs when no campaignId is provided
+  useEffect(() => {
+    if (!campaignId && !templateId && !tempTemplateId) {
+      setTempTemplateId(`temp_${Date.now()}`)
+    }
+  }, [campaignId, templateId, tempTemplateId])
 
   useEffect(() => {
     // Dynamically import the EmailEditor component
@@ -40,6 +62,92 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
 
     loadEmailEditor()
   }, [])
+
+  // Load saved design on component mount
+  useEffect(() => {
+    if (!EmailEditorComponent || !emailEditorRef.current) return
+
+    const loadSavedDesign = async () => {
+      try {
+        const params = new URLSearchParams()
+        if (campaignId) params.append("campaignId", campaignId)
+        if (templateId) params.append("templateId", templateId)
+        if (tempTemplateId && !campaignId && !templateId) params.append("templateId", tempTemplateId)
+
+        if (!params.toString()) return
+
+        const response = await fetch(`/api/email/save-design?${params.toString()}`)
+        const data = await response.json()
+
+        if (data.success && data.content) {
+          const unlayer = emailEditorRef.current?.editor
+          if (unlayer) {
+            // For now, only load HTML content since design JSON is not supported yet
+            unlayer.loadHTML(data.content)
+            console.log("Loaded saved HTML content from server")
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load saved design:", error)
+      }
+    }
+
+    loadSavedDesign()
+  }, [EmailEditorComponent, campaignId, templateId, tempTemplateId])
+
+  const saveDesignToServer = async (html: string, design: any) => {
+    try {
+      setIsSaving(true)
+      setSaveStatus("Saving...")
+
+      // Use tempTemplateId if no campaignId or templateId is provided
+      const effectiveTemplateId = templateId || (tempTemplateId && !campaignId ? tempTemplateId : null)
+
+      console.log("Saving design to server:", { 
+        html: html?.substring(0, 100), 
+        design: design ? "present" : "null", 
+        campaignId, 
+        templateId: effectiveTemplateId 
+      })
+
+      const response = await fetch("/api/email/save-design", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          design,
+          html,
+          campaignId,
+          templateId: effectiveTemplateId,
+        }),
+      })
+
+      const data = await response.json()
+      console.log("Server response:", data)
+
+      if (data.success) {
+        setLastSavedDesign(design)
+        setSaveStatus("Saved")
+        setTimeout(() => setSaveStatus(""), 2000)
+        console.log("Design saved to server:", data.message)
+        
+        // Update tempTemplateId with the actual template ID from server
+        if (data.templateId && tempTemplateId) {
+          setTempTemplateId(data.templateId.toString())
+        }
+      } else {
+        setSaveStatus("Save failed")
+        console.error("Failed to save design:", data.error)
+      }
+    } catch (error) {
+      setSaveStatus("Save failed")
+      console.error("Error saving design:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const exportHtml = () => {
     const unlayer = emailEditorRef.current?.editor;
     if (!unlayer) return;
@@ -51,6 +159,10 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
         setPreviewHtml(data.html);
         setIsPreviewOpen(true);
         setIsExporting(false);
+        
+        // Save to server when exporting
+        saveDesignToServer(data.html, data.design);
+        
         if (onSave) {
           unlayer.saveDesign((design: any) => {
             onSave(data.html, design);
@@ -71,8 +183,13 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
         unlayer.exportHtml((data: any) => {
           const { html } = data;
   
-          if (onSave && html) {
-            onSave(html, design);
+          if (html) {
+            // Save to server
+            saveDesignToServer(html, design);
+            
+            if (onSave) {
+              onSave(html, design);
+            }
           }
         });
       });
@@ -100,6 +217,8 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
               const { html } = data
               if (onSave && html && html.length > 0 && !html.includes('missing-container')) {
                 onSave(html, null)
+                // Only save when explicitly requested, not automatically
+                // saveDesignToServer(html, null)
               }
             })
           })
@@ -110,6 +229,8 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
           console.log("Initial HTML content:", html)
           if (onSave && html && html.length > 0 && !html.includes('missing-container')) {
             onSave(html, null)
+            // Only save when explicitly requested, not automatically
+            // saveDesignToServer(html, null)
           }
         })
       }
@@ -122,58 +243,43 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
 
   const onDesignSave = (data: any) => {
     console.log("Design saved", data)
-    // Save the content when design changes
-    const unlayer = emailEditorRef.current?.editor
-    if (unlayer) {
-      unlayer.exportHtml((data: any) => {
-        const { html } = data
-        if (onSave) {
-          onSave(html, null)
-        }
-      })
-    }
+    // Only save when explicitly requested, not automatically
+    // const unlayer = emailEditorRef.current?.editor
+    // if (unlayer) {
+    //   unlayer.exportHtml((data: any) => {
+    //     const { html } = data
+    //     if (onSave) {
+    //       onSave(html, null)
+    //     }
+    //     // Auto-save to server
+    //     saveDesignToServer(html, null)
+    //   })
+    // }
   }
 
-  // Add a periodic save mechanism
-  useEffect(() => {
-    if (!EmailEditorComponent) return
+  // Remove the periodic auto-save mechanism
+  // useEffect(() => {
+  //   if (!EmailEditorComponent || !autoSave) return
 
-    const interval = setInterval(() => {
-      const unlayer = emailEditorRef.current?.editor
-      if (unlayer) {
-        unlayer.saveDesign((design: any) => {
-          if (design && Object.keys(design).length > 0) {
-                         // Use our API route for periodic saves
-             fetch('/api/email/export', {
-               method: 'POST',
-               headers: {
-                 'Content-Type': 'application/json'
-               },
-               body: JSON.stringify({
-                 design: design
-               })
-             })
-                         .then(response => {
-               if (!response.ok) {
-                 throw new Error(`HTTP error! status: ${response.status}`)
-               }
-               return response.json()
-             })
-                           .then(data => {
-                if (data.success && data.html && onSave) {
-                  onSave(data.html, null)
-                }
-              })
-             .catch(error => {
-               console.error("Periodic save error:", error)
-             })
-          }
-        })
-      }
-    }, 5000) // Save every 5 seconds
+  //   const interval = setInterval(() => {
+  //     const unlayer = emailEditorRef.current?.editor
+  //     if (unlayer) {
+  //       unlayer.saveDesign((design: any) => {
+  //         if (design && Object.keys(design).length > 0) {
+  //           unlayer.exportHtml((data: any) => {
+  //             const { html } = data
+  //             if (html && html.length > 0 && !html.includes('missing-container')) {
+  //               // Auto-save to server every 30 seconds
+  //               saveDesignToServer(html, design)
+  //             }
+  //           })
+  //         }
+  //       })
+  //     }
+  //   }, 30000) // Save every 30 seconds
 
-    return () => clearInterval(interval)
-  }, [EmailEditorComponent, onSave])
+  //   return () => clearInterval(interval)
+  // }, [EmailEditorComponent, autoSave])
 
   return (
     <div className={className}>
@@ -185,7 +291,11 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
               <h3 className="text-lg font-semibold">Email Editor</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Drag and drop elements to create your email template. Use the toolbar on the left to add content blocks.
+                <span className="text-orange-600 ml-2">Manual save only - click Save button to preserve your work</span>
               </p>
+              {saveStatus && (
+                <p className="text-xs text-gray-500 mt-1">{saveStatus}</p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -220,11 +330,11 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
                 variant="outline"
                 size="sm"
                 onClick={saveDesign}
-                disabled={!EmailEditorComponent}
+                disabled={isSaving || !EmailEditorComponent}
                 className="flex items-center gap-2"
               >
                 <Save className="h-4 w-4" />
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </Button>
               <Button
                 size="sm"
@@ -246,37 +356,37 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
               onReady={onReady}
               onDesignLoad={onDesignLoad}
               onDesignSave={onDesignSave}
-                                                           options={{
-                  displayMode: "email",
-                  features: {
-                    preview: true,
-                    imageEditor: true,
-                    stockImages: true,
-                    textEditor: {
-                      spellChecker: true,
+              options={{
+                displayMode: "email",
+                features: {
+                  preview: true,
+                  imageEditor: true,
+                  stockImages: true,
+                  textEditor: {
+                    spellChecker: true,
+                  },
+                },
+                appearance: {
+                  theme: "light",
+                  panels: {
+                    tools: {
+                      dock: "left",
                     },
                   },
-                  appearance: {
-                    theme: "light",
-                    panels: {
-                      tools: {
-                        dock: "left",
-                      },
-                    },
-                  },
-                  user: {
-                    id: 1,
-                    name: "User",
-                    email: "user@example.com",
-                  },
-                  mergeTags: [
-                    { name: "First Name", value: "{{first_name}}", sample: "John" },
-                    { name: "Last Name", value: "{{last_name}}", sample: "Doe" },
-                    { name: "Email", value: "{{email}}", sample: "john@example.com" },
-                    { name: "Company", value: "{{company}}", sample: "Acme Inc" },
-                  ],
-                }}
-                               apiKey="7jnfeJ7C8UgmeA9pjTzuh5P2Bf3smZoz16GZ7CNV9KIMB7nUCvslNb6ahRHJQ0xd"
+                },
+                user: {
+                  id: 1,
+                  name: "User",
+                  email: "user@example.com",
+                },
+                mergeTags: [
+                  { name: "First Name", value: "{{first_name}}", sample: "John" },
+                  { name: "Last Name", value: "{{last_name}}", sample: "Doe" },
+                  { name: "Email", value: "{{email}}", sample: "john@example.com" },
+                  { name: "Company", value: "{{company}}", sample: "Acme Inc" },
+                ],
+              }}
+              apiKey="7jnfeJ7C8UgmeA9pjTzuh5P2Bf3smZoz16GZ7CNV9KIMB7nUCvslNb6ahRHJQ0xd"
             />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -327,24 +437,24 @@ export function EmailBuilder({ onSave, onExportToHtml, initialDesign, className 
             >
               Close
             </Button>
-                         <Button
-               onClick={() => {
-                 navigator.clipboard.writeText(previewHtml)
-                 // You could add a toast notification here
-               }}
-             >
-               Copy HTML
-             </Button>
-             <Button
-               onClick={() => {
-                 if (onExportToHtml) {
-                   onExportToHtml(previewHtml)
-                 }
-                 setIsPreviewOpen(false)
-               }}
-             >
-               Use as Raw HTML
-             </Button>
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(previewHtml)
+                // You could add a toast notification here
+              }}
+            >
+              Copy HTML
+            </Button>
+            <Button
+              onClick={() => {
+                if (onExportToHtml) {
+                  onExportToHtml(previewHtml)
+                }
+                setIsPreviewOpen(false)
+              }}
+            >
+              Use as Raw HTML
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
