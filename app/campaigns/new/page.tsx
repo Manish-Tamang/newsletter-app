@@ -442,6 +442,7 @@ export default function NewCampaignPage() {
                       onSave={(html) => setContent(html)}
                       onExportToHtml={handleExportToHtml}
                       className="w-full h-full"
+                      autoSave={true}
                     />
                   )}
                 </div>
