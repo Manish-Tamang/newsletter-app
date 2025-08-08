@@ -1,25 +1,18 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Download, Save, Eye, Maximize2, Minimize2 } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useEmailEditor } from "@/hooks/use-email-editor"
+import { loadSavedDesign, saveDesignToLocalStorage as persistToStorage } from "@/lib/email-editor-storage"
 
 interface EmailBuilderProps {
   onSave?: (html: string, design: any) => void
   onExportToHtml?: (html: string) => void
   initialDesign?: any
   className?: string
-  campaignId?: string
-  templateId?: string
-  autoSave?: boolean
+  storageKey?: string // Key for localStorage
 }
 
 export function EmailBuilder({ 
@@ -27,122 +20,32 @@ export function EmailBuilder({
   onExportToHtml, 
   initialDesign, 
   className,
-  campaignId,
-  templateId,
-  autoSave = true
+  storageKey = "email-builder-design"
 }: EmailBuilderProps) {
-  const emailEditorRef = useRef<any>(null)
+  const { EmailEditorComponent, emailEditorRef } = useEmailEditor()
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [previewHtml, setPreviewHtml] = useState("")
   const [isExporting, setIsExporting] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [EmailEditorComponent, setEmailEditorComponent] = useState<any>(null)
-  const [lastSavedDesign, setLastSavedDesign] = useState<any>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<string>("")
-  const [tempTemplateId, setTempTemplateId] = useState<string>("")
 
-  // Generate a temporary template ID for saving designs when no campaignId is provided
-  useEffect(() => {
-    if (!campaignId && !templateId && !tempTemplateId) {
-      setTempTemplateId(`temp_${Date.now()}`)
-    }
-  }, [campaignId, templateId, tempTemplateId])
-
-  useEffect(() => {
-    // Dynamically import the EmailEditor component
-    const loadEmailEditor = async () => {
-      try {
-        const { default: EmailEditor } = await import("react-email-editor")
-        setEmailEditorComponent(() => EmailEditor)
-      } catch (error) {
-        console.error("Failed to load email editor:", error)
-      }
-    }
-
-    loadEmailEditor()
-  }, [])
-
-  // Load saved design on component mount
   useEffect(() => {
     if (!EmailEditorComponent || !emailEditorRef.current) return
-
-    const loadSavedDesign = async () => {
-      try {
-        const params = new URLSearchParams()
-        if (campaignId) params.append("campaignId", campaignId)
-        if (templateId) params.append("templateId", templateId)
-        if (tempTemplateId && !campaignId && !templateId) params.append("templateId", tempTemplateId)
-
-        if (!params.toString()) return
-
-        const response = await fetch(`/api/email/save-design?${params.toString()}`)
-        const data = await response.json()
-
-        if (data.success && data.content) {
-          const unlayer = emailEditorRef.current?.editor
-          if (unlayer) {
-            // For now, only load HTML content since design JSON is not supported yet
-            unlayer.loadHTML(data.content)
-            console.log("Loaded saved HTML content from server")
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load saved design:", error)
-      }
+    const fn = () => {
+      const saved = loadSavedDesign(storageKey)
+      const unlayer = emailEditorRef.current?.editor
+      if (!saved || !unlayer) return
+      if (saved.design) unlayer.loadDesign(saved.design)
+      else if (saved.html) unlayer.loadHTML(saved.html)
     }
+    setTimeout(fn, 1000)
+  }, [EmailEditorComponent, storageKey])
 
-    loadSavedDesign()
-  }, [EmailEditorComponent, campaignId, templateId, tempTemplateId])
-
-  const saveDesignToServer = async (html: string, design: any) => {
+  const persist = (html: string, design: any) => {
+    setIsSaving(true)
     try {
-      setIsSaving(true)
-      setSaveStatus("Saving...")
-
-      // Use tempTemplateId if no campaignId or templateId is provided
-      const effectiveTemplateId = templateId || (tempTemplateId && !campaignId ? tempTemplateId : null)
-
-      console.log("Saving design to server:", { 
-        html: html?.substring(0, 100), 
-        design: design ? "present" : "null", 
-        campaignId, 
-        templateId: effectiveTemplateId 
-      })
-
-      const response = await fetch("/api/email/save-design", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          design,
-          html,
-          campaignId,
-          templateId: effectiveTemplateId,
-        }),
-      })
-
-      const data = await response.json()
-      console.log("Server response:", data)
-
-      if (data.success) {
-        setLastSavedDesign(design)
-        setSaveStatus("Saved")
-        setTimeout(() => setSaveStatus(""), 2000)
-        console.log("Design saved to server:", data.message)
-        
-        // Update tempTemplateId with the actual template ID from server
-        if (data.templateId && tempTemplateId) {
-          setTempTemplateId(data.templateId.toString())
-        }
-      } else {
-        setSaveStatus("Save failed")
-        console.error("Failed to save design:", data.error)
-      }
-    } catch (error) {
-      setSaveStatus("Save failed")
-      console.error("Error saving design:", error)
+      persistToStorage(storageKey, html, design, setSaveStatus)
     } finally {
       setIsSaving(false)
     }
@@ -160,8 +63,7 @@ export function EmailBuilder({
         setIsPreviewOpen(true);
         setIsExporting(false);
         
-        // Save to server when exporting
-        saveDesignToServer(data.html, data.design);
+        persist(data.html, data.design);
         
         if (onSave) {
           unlayer.saveDesign((design: any) => {
@@ -176,7 +78,7 @@ export function EmailBuilder({
   };
   
 
-  const saveDesign = async () => {
+  const saveDesign = () => {
     const unlayer = emailEditorRef.current?.editor;
     if (unlayer) {
       unlayer.saveDesign((design: any) => {
@@ -184,8 +86,7 @@ export function EmailBuilder({
           const { html } = data;
   
           if (html) {
-            // Save to server
-            saveDesignToServer(html, design);
+            persist(html, design);
             
             if (onSave) {
               onSave(html, design);
@@ -197,101 +98,43 @@ export function EmailBuilder({
   };
   
 
-  const onLoad = () => {
-    console.log("Email editor loaded")
-  }
+  const onLoad = () => {}
 
   const onReady = (unlayer: any) => {
-    console.log("Email editor ready")
-    
-    // Wait a bit for the editor to fully initialize
     setTimeout(() => {
-      if (unlayer) {
-        // Load initial design if provided
-        if (initialDesign) {
-          unlayer.loadDesign(initialDesign)
-        } else {
-          // Add a default text block if no initial design
-          unlayer.addEventListener('design:updated', () => {
-            unlayer.exportHtml((data: any) => {
-              const { html } = data
-              if (onSave && html && html.length > 0 && !html.includes('missing-container')) {
-                onSave(html, null)
-                // Only save when explicitly requested, not automatically
-                // saveDesignToServer(html, null)
-              }
-            })
+      if (!unlayer) return
+      if (initialDesign) {
+        unlayer.loadDesign(initialDesign)
+      } else {
+        unlayer.addEventListener('design:updated', () => {
+          unlayer.exportHtml((data: any) => {
+            const { html } = data
+            if (onSave && html && html.length > 0 && !html.includes('missing-container')) onSave(html, null)
           })
-        }
-        
-        unlayer.exportHtml((data: any) => {
-          const { html } = data
-          console.log("Initial HTML content:", html)
-          if (onSave && html && html.length > 0 && !html.includes('missing-container')) {
-            onSave(html, null)
-            // Only save when explicitly requested, not automatically
-            // saveDesignToServer(html, null)
-          }
         })
       }
+      unlayer.exportHtml((data: any) => {
+        const { html } = data
+        if (onSave && html && html.length > 0 && !html.includes('missing-container')) onSave(html, null)
+      })
     }, 1000)
   }
 
-  const onDesignLoad = (data: any) => {
-    console.log("Design loaded", data)
-  }
+  const onDesignLoad = (_data: any) => {}
+  const onDesignSave = (_data: any) => {}
 
-  const onDesignSave = (data: any) => {
-    console.log("Design saved", data)
-    // Only save when explicitly requested, not automatically
-    // const unlayer = emailEditorRef.current?.editor
-    // if (unlayer) {
-    //   unlayer.exportHtml((data: any) => {
-    //     const { html } = data
-    //     if (onSave) {
-    //       onSave(html, null)
-    //     }
-    //     // Auto-save to server
-    //     saveDesignToServer(html, null)
-    //   })
-    // }
-  }
 
-  // Remove the periodic auto-save mechanism
-  // useEffect(() => {
-  //   if (!EmailEditorComponent || !autoSave) return
-
-  //   const interval = setInterval(() => {
-  //     const unlayer = emailEditorRef.current?.editor
-  //     if (unlayer) {
-  //       unlayer.saveDesign((design: any) => {
-  //         if (design && Object.keys(design).length > 0) {
-  //           unlayer.exportHtml((data: any) => {
-  //             const { html } = data
-  //             if (html && html.length > 0 && !html.includes('missing-container')) {
-  //               // Auto-save to server every 30 seconds
-  //               saveDesignToServer(html, design)
-  //             }
-  //           })
-  //         }
-  //       })
-  //     }
-  //   }, 30000) // Save every 30 seconds
-
-  //   return () => clearInterval(interval)
-  // }, [EmailEditorComponent, autoSave])
 
   return (
     <div className={className}>
       <div className={isFullscreen ? "fixed inset-4 z-50 bg-white border rounded-lg shadow-lg" : "border rounded-lg bg-white"}>
-        {/* Header */}
         <div className={`p-4 border-b ${isFullscreen ? "" : ""}`}>
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">Email Editor</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Drag and drop elements to create your email template. Use the toolbar on the left to add content blocks.
-                <span className="text-orange-600 ml-2">Manual save only - click Save button to preserve your work</span>
+                <span className="text-blue-600 ml-2">Saves to your browser's local storage - click Save to preserve your work</span>
               </p>
               {saveStatus && (
                 <p className="text-xs text-gray-500 mt-1">{saveStatus}</p>
@@ -399,7 +242,6 @@ export function EmailBuilder({
         </div>
       </div>
 
-      {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
