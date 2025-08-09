@@ -154,7 +154,7 @@ export default function SubscribersPage() {
   }
 
   if (isLoading) {
-    return (
+  return (
       <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
         <div className="space-y-4">
           <Skeleton className="h-10 w-48" />
@@ -183,7 +183,7 @@ export default function SubscribersPage() {
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-10 w-64" />
           </div>
-          <div className="space-y-6">
+    <div className="space-y-6">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center justify-between py-6">
                 <div className="space-y-2">
@@ -290,18 +290,18 @@ export default function SubscribersPage() {
 
       {/* Search and Subscribers List */}
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">ALL SUBSCRIBERS</h2>
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Search subscribers..."
+                <Input
+                  placeholder="Search subscribers..."
               className="pl-10 border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
 
         {filteredContacts.length === 0 ? (
           <div className="text-center py-12">
