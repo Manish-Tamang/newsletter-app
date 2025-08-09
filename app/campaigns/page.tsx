@@ -10,6 +10,8 @@ import { useCampaigns } from "@/hooks/use-campaigns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
+import { GrSend } from "react-icons/gr";
+import { PiMailboxDuotone } from "react-icons/pi";
 
 export default function CampaignsPage() {
   const { campaigns, loading, error, deleteCampaign } = useCampaigns()
@@ -174,7 +176,7 @@ export default function CampaignsPage() {
               value="sent"
               className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
             >
-              <Send className="h-4 w-4" />
+              <GrSend className="h-4 w-4" />
               Sent
             </TabsTrigger>
             <TabsTrigger
@@ -196,7 +198,7 @@ export default function CampaignsPage() {
           <TabsContent value="all" className="space-y-6">
             {campaigns.length === 0 ? (
               <div className="text-center py-12">
-                <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <PiMailboxDuotone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns</h3>
                 <p className="text-gray-600">Create your first campaign to get started</p>
               </div>
@@ -281,7 +283,7 @@ export default function CampaignsPage() {
               ))
             ) : (
               <div className="text-center py-12">
-                <Send className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <GrSend className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No sent campaigns</h3>
                 <p className="text-gray-600">Your sent campaigns will appear here</p>
               </div>
