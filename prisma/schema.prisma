@@ -13,8 +13,6 @@ model Template {
   description String?
   category    String?
   content     String
-  htmlContent String?
-  designJson  String?  // Store the full design JSON from Unlayer
   isHtml      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -26,8 +24,6 @@ model Campaign {
   title       String
   subject     String
   content     String
-  htmlContent String?   // Store the HTML version of the content
-  designJson  String?   // Store the full design JSON from Unlayer
   status      String    @default("draft") 
   sentDate    DateTime?
   openRate    Float?
@@ -38,14 +34,3 @@ model Campaign {
   updatedAt   DateTime  @updatedAt
 }
 
-model EmailDesign {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  htmlContent String   // The HTML content
-  designJson  String   // The full Unlayer design JSON
-  category    String   @default("draft")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
