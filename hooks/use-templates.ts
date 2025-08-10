@@ -3,18 +3,46 @@
 import { useState, useEffect } from "react"
 import { useToast } from "./use-toast"
 
+/**
+ * Template interface representing an email template
+ */
 export interface Template {
+  /** Unique identifier for the template */
   id: string
+  /** Template name */
   name: string
+  /** Template description */
   description: string
+  /** Template category (e.g., "newsletter", "promotional", "welcome") */
   category: string
+  /** HTML content of the template */
   content: string
-  htmlContent?: string
+  /** Whether the template is HTML-based */
   isHtml: boolean
+  /** 
+   * Base64 encoded screenshot of the email template preview
+   * Format: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+   * Maximum size: ~1MB (base64 encoded)
+   * Updated automatically when template is saved or content changes
+   */
+  previewImage?: string
+  /** Template creation timestamp */
   createdAt: string
+  /** Template last update timestamp */
   updatedAt: string
+  /** Number of times this template has been used */
   usage: number
 }
+
+/**
+ * Type for creating a new template (excludes auto-generated fields)
+ */
+export type CreateTemplateData = Omit<Template, "id" | "createdAt" | "updatedAt" | "usage">
+
+/**
+ * Type for updating an existing template (all fields optional except id)
+ */
+export type UpdateTemplateData = Partial<Omit<Template, "id" | "createdAt" | "updatedAt" | "usage">>
 
 export function useTemplates() {
   const [templates, setTemplates] = useState<Template[]>([])
@@ -44,7 +72,7 @@ export function useTemplates() {
     }
   }
 
-  const createTemplate = async (templateData: Omit<Template, "id" | "createdAt" | "updatedAt" | "usage">) => {
+  const createTemplate = async (templateData: CreateTemplateData) => {
     setLoading(true)
     setError(null)
     try {
@@ -82,7 +110,7 @@ export function useTemplates() {
     }
   }
 
-  const updateTemplate = async (id: string, templateData: Partial<Template>) => {
+  const updateTemplate = async (id: string, templateData: UpdateTemplateData) => {
     setLoading(true)
     setError(null)
     try {
