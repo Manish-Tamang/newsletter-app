@@ -8,15 +8,21 @@ datasource db {
 }
 
 model Template {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  category    String?
-  content     String
-  isHtml      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  usage       Int      @default(0)
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  category      String?
+  content       String
+  isHtml        Boolean  @default(false)
+  /// Base64 encoded screenshot of the email template preview
+  /// This field stores the captured screenshot as a base64 string
+  /// Format: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+  /// Maximum size: ~1MB (base64 encoded)
+  /// Updated automatically when template is saved or content changes
+  previewImage  String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  usage         Int      @default(0)
 }
 
 model Campaign {
