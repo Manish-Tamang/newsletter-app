@@ -10,6 +10,7 @@ import { loadSavedDesign, saveDesignToLocalStorage as persistToStorage } from "@
 interface EmailBuilderProps {
   onSave?: (html: string, design: any) => void
   onExportToHtml?: (html: string) => void
+  onContentChange?: (html: string) => void
   initialDesign?: any
   className?: string
   storageKey?: string // Key for localStorage
@@ -18,6 +19,7 @@ interface EmailBuilderProps {
 export function EmailBuilder({ 
   onSave, 
   onExportToHtml, 
+  onContentChange,
   initialDesign, 
   className,
   storageKey = "email-builder-design"
@@ -103,6 +105,7 @@ export function EmailBuilder({
   const onReady = (unlayer: any) => {
     setTimeout(() => {
       if (!unlayer) return
+      
       if (initialDesign) {
         unlayer.loadDesign(initialDesign)
       } else {
@@ -110,18 +113,36 @@ export function EmailBuilder({
           unlayer.exportHtml((data: any) => {
             const { html } = data
             if (onSave && html && html.length > 0 && !html.includes('missing-container')) onSave(html, null)
+            // Notify parent of content change
+            if (onContentChange && html && html.length > 0 && !html.includes('missing-container')) {
+              onContentChange(html)
+            }
           })
         })
       }
-      unlayer.exportHtml((data: any) => {
+      unlayer.exportHtml((data: any) => { // Another exportHtml call
         const { html } = data
         if (onSave && html && html.length > 0 && !html.includes('missing-container')) onSave(html, null)
+        // Notify parent of content change
+        if (onContentChange && html && html.length > 0 && !html.includes('missing-container')) {
+          onContentChange(html)
+        }
       })
     }, 1000)
   }
 
   const onDesignLoad = (_data: any) => {}
-  const onDesignSave = (_data: any) => {}
+  const onDesignSave = (_data: any) => {
+    // Export HTML to get current content and notify parent
+    const unlayer = emailEditorRef.current?.editor;
+    if (unlayer && onContentChange) {
+      unlayer.exportHtml((data: any) => {
+        if (data?.html) {
+          onContentChange(data.html);
+        }
+      });
+    }
+  }
 
 
 
