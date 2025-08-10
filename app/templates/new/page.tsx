@@ -22,10 +22,19 @@ export default function NewTemplatePage() {
   }
 
   return (
-    <TemplateEditor
-      onSave={handleSave}
-      onCancel={handleCancel}
-      loading={loading}
-    />
+    <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
+      <div className="space-y-4">
+        <h1 className="text-4xl font-medium tracking-tight">Create New Template</h1>
+        <p className="text-lg text-gray-600 max-w-2xl">
+          Design a beautiful, responsive email template that you can reuse across your campaigns.
+        </p>
+      </div>
+      
+      <TemplateEditor
+        onSave={handleSave}
+        onCancel={handleCancel}
+        loading={loading}
+      />
+    </div>
   )
 } 
