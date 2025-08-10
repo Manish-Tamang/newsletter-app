@@ -22,10 +22,11 @@ import {
 export default function TemplateDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { updateTemplate, getTemplate, deleteTemplate, loading } = useTemplates()
+  const { updateTemplate, getTemplate, deleteTemplate } = useTemplates()
   const [template, setTemplate] = useState<Template | null>(null)
   const [fetching, setFetching] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const fetchTemplate = async () => {
@@ -47,10 +48,13 @@ export default function TemplateDetailPage() {
 
   const handleSave = async (templateData: Partial<Template>) => {
     try {
+      setSaving(true)
       const updatedTemplate = await updateTemplate(params.id as string, templateData)
       setTemplate(updatedTemplate)
     } catch (error) {
       // Error handling is done in the hook
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -150,7 +154,7 @@ export default function TemplateDetailPage() {
           template={template}
           onSave={handleSave}
           onCancel={handleCancel}
-          loading={loading}
+          loading={saving}
         />
       ) : (
         <div className="space-y-6">
