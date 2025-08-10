@@ -1,3 +1,5 @@
+"use client"
+
 import { EmailBuilder } from "@/components/EmailBuilder"
 
 export default function EditorPage() {
