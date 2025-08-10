@@ -12,6 +12,7 @@ import { EmailBuilder } from "@/components/EmailBuilder"
 import { Badge } from "@/components/ui/badge"
 import { Eye, Edit, Save, X, Type, Code, RotateCcw } from "lucide-react"
 import { Template } from "@/hooks/use-templates"
+import { captureEmailPreviewScreenshot, validateScreenshot, autoOptimizeScreenshot } from "@/lib/screenshot"
 
 interface TemplatePreviewEditorProps {
   template: Template
@@ -26,23 +27,53 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
   const [description, setDescription] = useState(template.description)
   const [category, setCategory] = useState(template.category)
   const [content, setContent] = useState(template.content)
-  const [htmlContent, setHtmlContent] = useState(template.htmlContent || template.content)
   const [isHtml, setIsHtml] = useState(template.isHtml)
+  const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false)
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      return
-    }
+    if (!name.trim()) return
 
-    await onSave({
-      name: name.trim(),
-      description: description.trim(),
-      category,
-      content: isHtml ? htmlContent : content,
-      htmlContent: isHtml ? htmlContent : content,
-      isHtml,
-    })
-    setIsEditing(false)
+    try {
+      setIsCapturingScreenshot(true)
+      
+      let previewImage = template.previewImage
+      
+      if (content.trim()) {
+        try {
+          const screenshot = await captureEmailPreviewScreenshot(content)
+          
+          // Auto-optimize the screenshot if needed
+          const optimizedScreenshot = await autoOptimizeScreenshot(screenshot)
+          
+          // Validate the optimized screenshot before saving
+          const validation = validateScreenshot(optimizedScreenshot)
+          if (validation.isValid && validation.screenshot) {
+            previewImage = validation.screenshot.dataUrl
+          } else {
+            console.warn("Screenshot validation failed:", validation.error)
+            // Still save the template, just without the preview image
+          }
+        } catch (error) {
+          console.warn("Failed to capture screenshot:", error)
+          // Continue saving the template without the preview image
+        }
+      }
+
+      await onSave({
+        name: name.trim(),
+        description: description.trim(),
+        category: category.trim(),
+        content: content.trim(),
+        isHtml: true,
+        previewImage,
+      })
+      
+      setIsEditing(false)
+    } catch (error) {
+      console.error("Failed to save template:", error)
+    } finally {
+      setIsCapturingScreenshot(false)
+    }
   }
 
   const handleCancel = () => {
@@ -51,15 +82,11 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
     setDescription(template.description)
     setCategory(template.category)
     setContent(template.content)
-    setHtmlContent(template.htmlContent || template.content)
     setIsHtml(template.isHtml)
     setIsEditing(false)
   }
 
   const getPreviewContent = () => {
-    if (isHtml) {
-      return htmlContent
-    }
     return content
   }
 
@@ -88,9 +115,9 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
               <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={loading || !name.trim()}>
+            <Button onClick={handleSave} disabled={loading || !name.trim() || isCapturingScreenshot}>
               <Save className="mr-2 h-4 w-4" />
-              {loading ? "Saving..." : "Save Changes"}
+              {loading ? "Saving..." : isCapturingScreenshot ? "Capturing..." : "Save Changes"}
             </Button>
           </div>
         </div>
@@ -178,8 +205,8 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
                     <Textarea
                       id="htmlContent"
                       placeholder="<html><body><h1>Your HTML content here...</h1></body></html>"
-                      value={htmlContent}
-                      onChange={(e) => setHtmlContent(e.target.value)}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
                       className="min-h-[400px] font-mono text-sm"
                     />
                     <p className="text-sm text-gray-500">
@@ -190,6 +217,7 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
                   <div className="space-y-2">
                     <EmailBuilder
                       onSave={(html) => setContent(html)}
+                      onContentChange={(html) => setContent(html)}
                       className="w-full"
                     />
                     <p className="text-sm text-gray-500">
