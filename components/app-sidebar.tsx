@@ -1,6 +1,5 @@
 "use client"
 
-import { Mail, Settings, Users, Home, BarChart3, FileText, ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -14,15 +13,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { MdDashboardCustomize } from "react-icons/md";
+import { IoIosMail } from "react-icons/io";
+import { IoPeople } from "react-icons/io5";
+import { FaFileAlt } from "react-icons/fa";
+import { AiFillSetting } from "react-icons/ai";
 
 const navigation = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
-  { title: "Campaigns", url: "/campaigns", icon: Mail },
-  { title: "Subscribers", url: "/subscribers", icon: Users },
-  { title: "Templates", url: "/templates", icon: FileText },
-  { title: "Media", url: "/media", icon: ImageIcon },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Dashboard", url: "/dashboard", icon: MdDashboardCustomize },
+  { title: "Campaigns", url: "/campaigns", icon: IoIosMail },
+  { title: "Subscribers", url: "/subscribers", icon: IoPeople },
+  { title: "Templates", url: "/templates", icon: FaFileAlt },
+  { title: "Settings", url: "/settings", icon: AiFillSetting },
 ]
 
 export function AppSidebar() {
@@ -48,7 +50,7 @@ export function AppSidebar() {
                     className="w-full justify-start px-0 py-3 text-gray-600 hover:text-black hover:bg-transparent data-[active=true]:bg-transparent data-[active=true]:text-black data-[active=true]:font-medium"
                   >
                     <Link href={item.url}>
-                      <item.icon className="size-4 mr-3" />
+                      <item.icon className="size-4 mr-1" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
