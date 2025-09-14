@@ -13,7 +13,6 @@ export default function NewTemplatePage() {
       await createTemplate(templateData)
       router.push("/templates")
     } catch (error) {
-      // Error handling is done in the hook
     }
   }
 
