@@ -333,7 +333,7 @@ export default function SubscribersPage() {
                           !contact.unsubscribed ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        {!contact.unsubscribed ? "active" : "unsubscribed"}
+                        {!contact.unsubscribed ? "Active" : "Unsubscribed"}
                       </span>
                       {contact.createdAt && (
                         <span>
