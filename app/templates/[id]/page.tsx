@@ -49,7 +49,10 @@ export default function TemplateDetailPage() {
   const handleSave = async (templateData: Partial<Template>) => {
     try {
       setSaving(true)
-      const updatedTemplate = await updateTemplate(params.id as string, templateData)
+      const updatedTemplate = await updateTemplate(params.id as string, {
+        ...templateData,
+        previewImage: templateData.previewImage || template?.previewImage
+      })
       setTemplate(updatedTemplate)
     } catch (error) {
       // Error handling is done in the hook
