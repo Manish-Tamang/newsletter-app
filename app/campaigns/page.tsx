@@ -92,7 +92,6 @@ export default function CampaignsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
-      {/* Header */}
       <div className="space-y-4">
         <h1 className="text-4xl font-medium tracking-tight">Campaigns</h1>
         <p className="text-lg text-gray-600 max-w-2xl">
@@ -167,28 +166,28 @@ export default function CampaignsPage() {
           <TabsList className="grid w-full grid-cols-4 max-w-lg bg-transparent p-0 h-auto">
             <TabsTrigger
               value="all"
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-sm data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white"
             >
               <Mail className="h-4 w-4" />
               All
             </TabsTrigger>
             <TabsTrigger
               value="sent"
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-sm data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
             >
               <GrSend className="h-4 w-4" />
               Sent
             </TabsTrigger>
             <TabsTrigger
               value="drafts"
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-sm data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
             >
               <Archive className="h-4 w-4" />
               Drafts
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-sm data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
             >
               <BarChart3 className="h-4 w-4" />
               Analytics
