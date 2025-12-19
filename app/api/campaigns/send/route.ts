@@ -6,6 +6,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title, subject, content, subscribers, fromEmail, replyTo } = body as CampaignData;
 
+    console.log("========================================");
+    console.log("CAMPAIGN SEND API REQUEST RECEIVED:");
+    console.log("Title:", title);
+    console.log("Subject:", subject);
+    console.log("Subscribers Count:", subscribers ? subscribers.length : 0);
+    console.log("Content Length:", content ? content.length : 0);
+    console.log("Content Preview (first 250 chars):", content ? content.substring(0, 250) : "EMPTY");
+    console.log("========================================");
+
     // Validate required fields
     if (!title || !subject || !content || !subscribers || subscribers.length === 0) {
       return NextResponse.json(
