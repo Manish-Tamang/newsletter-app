@@ -6,6 +6,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { to, subject, html, text, from, replyTo } = body as EmailData;
 
+    console.log("========================================");
+    console.log("EMAIL SEND API REQUEST RECEIVED:");
+    console.log("To:", to);
+    console.log("Subject:", subject);
+    console.log("HTML Length:", html ? html.length : 0);
+    console.log("HTML Preview (first 250 chars):", html ? html.substring(0, 250) : "EMPTY");
+    console.log("========================================");
+
     // Validate required fields
     if (!to || !subject || !html) {
       return NextResponse.json(
