@@ -5,9 +5,21 @@ export async function GET() {
   try {
     const templates = await prisma.template.findMany({
       orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        content: true,
+        isHtml: true,
+        createdAt: true,
+        updatedAt: true,
+        usage: true,
+      },
     });
     return NextResponse.json({ templates });
   } catch (error) {
+    console.error("Templates fetch error:", error);
     return NextResponse.json(
       { error: "Failed to fetch templates" },
       { status: 500 }
@@ -18,7 +30,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, category, content, isHtml } = body;
+    const { name, description, category, content, isHtml, previewImage } = body;
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -43,6 +55,7 @@ export async function POST(request: NextRequest) {
         category: category?.trim() || "General",
         content: content.trim(),
         isHtml: Boolean(isHtml),
+        previewImage: previewImage || null,
       },
     });
 
