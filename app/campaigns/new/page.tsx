@@ -1,29 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Zap, FileText, Archive } from "lucide-react"
+import { FileText, Archive } from "lucide-react"
 import { useEmail } from "@/hooks/use-email"
 import { useSubscribers } from "@/hooks/use-subscribers"
 import { useToast } from "@/hooks/use-toast"
-import { useTemplates } from "@/hooks/use-templates"
 import { useCampaigns } from "@/hooks/use-campaigns"
 import { useCampaignContent } from "@/hooks/use-campaign-content"
 import { NewCampaignHeader } from "@/components/campaigns/NewCampaignHeader"
 import { CampaignErrorAlert } from "@/components/campaigns/CampaignErrorAlert"
 import { CampaignForm } from "@/components/campaigns/CampaignForm"
 import { TestEmailPanel } from "@/components/campaigns/TestEmailPanel"
-import { ContentEditor } from "@/components/campaigns/ContentEditor"
+import { ContentEditor, type ContentEditorHandle } from "@/components/campaigns/ContentEditor"
 import { SettingsPanel } from "@/components/campaigns/SettingsPanel"
-import { extractPlainTextFromHtml } from "@/lib/email"
-import { MdCampaign } from "react-icons/md";
+import { MdCampaign } from "react-icons/md"
 
 export default function NewCampaignPage() {
   const { sendTestEmail, sendCampaign, isLoading, error, clearError } = useEmail()
   const { contacts } = useSubscribers()
-  const { templates } = useTemplates()
   const { createCampaign } = useCampaigns()
   const { toast } = useToast()
+  const contentEditorRef = useRef<ContentEditorHandle>(null)
 
   const {
     title,
@@ -36,13 +34,15 @@ export default function NewCampaignPage() {
     setRawHtml,
     useRawHtml,
     setUseRawHtml,
-    selectedTemplateId,
-    setSelectedTemplateId,
-    handleExportToHtml,
     getFinalContent,
-  } = useCampaignContent(templates)
+    refreshContentFromEditor,
+  } = useCampaignContent()
 
   const [testEmail, setTestEmail] = useState("")
+
+  const resolveContentForSend = async () => {
+    return refreshContentFromEditor(() => contentEditorRef.current?.exportLatestHtml() ?? Promise.resolve(null))
+  }
 
   const handleSendTest = async () => {
     if (!testEmail) {
@@ -54,16 +54,18 @@ export default function NewCampaignPage() {
       return
     }
 
-    if (!subject || !getFinalContent()) {
+    const emailContent = await resolveContentForSend()
+
+    if (!subject || !emailContent) {
       toast({
         title: "Error",
-        description: "Please fill in subject and content before sending test",
+        description: "Please build your email in the builder before sending a test",
         variant: "destructive",
       })
       return
     }
 
-    const result = await sendTestEmail(testEmail, subject, getFinalContent())
+    const result = await sendTestEmail(testEmail, subject, emailContent)
 
     if (result.success) {
       toast({
@@ -80,10 +82,12 @@ export default function NewCampaignPage() {
   }
 
   const handleSendCampaign = async () => {
-    if (!title || !subject || !getFinalContent()) {
+    const emailContent = await resolveContentForSend()
+
+    if (!title || !subject || !emailContent) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in campaign details and build your email content",
         variant: "destructive",
       })
       return
@@ -100,19 +104,19 @@ export default function NewCampaignPage() {
     }
 
     try {
-      const savedCampaign = await createCampaign({
+      await createCampaign({
         title,
         subject,
-        content: getFinalContent(),
-        fromEmail: "newsletter@gulle.tech",
+        content: emailContent,
+        fromEmail: "newsletter@manishtamang.com",
       })
 
       const result = await sendCampaign({
         title,
         subject,
-        content: getFinalContent(),
+        content: emailContent,
         subscribers: activeSubscriberEmails,
-        fromEmail: "newsletter@gulle.tech",
+        fromEmail: "newsletter@manishtamang.com",
       })
 
       if (result.success) {
@@ -124,7 +128,6 @@ export default function NewCampaignPage() {
         setSubject("")
         setContent("")
         setRawHtml("")
-        setSelectedTemplateId("")
       } else {
         toast({
           title: "Error",
@@ -132,7 +135,7 @@ export default function NewCampaignPage() {
           variant: "destructive",
         })
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create or send campaign",
@@ -141,72 +144,39 @@ export default function NewCampaignPage() {
     }
   }
 
-  const handleSaveAsDraft = async () => {
-    if (!title || !subject || !getFinalContent()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      await createCampaign({
-        title,
-        subject,
-        content: getFinalContent(),
-        fromEmail: "newsletter@gulle.tech",
-      })
-
-      toast({
-        title: "Success",
-        description: "Campaign saved as draft successfully!",
-      })
-
-      setTitle("")
-      setSubject("")
-      setContent("")
-      setRawHtml("")
-      setSelectedTemplateId("")
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to save campaign as draft",
-        variant: "destructive",
-      })
-    }
-  }
+  const currentPreview = getFinalContent()
 
   return (
     <div className="max-w-4xl mx-auto space-y-16 py-8 px-6">
       <NewCampaignHeader
         onSend={handleSendCampaign}
-        disabled={isLoading || !title || !subject || !getFinalContent() || contacts.filter((c) => !c.unsubscribed).length === 0}
+        disabled={isLoading || !title || !subject || !currentPreview || contacts.filter((c) => !c.unsubscribed).length === 0}
         recipientsReady={contacts.filter((c) => !c.unsubscribed).length}
       />
 
       <CampaignErrorAlert error={error || undefined} onClear={clearError} />
 
-      {/* Tabs */}
       <div className="space-y-8">
-        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">CAMPAIGN SETUP</h2>
+        <div>
+          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">CREATE EMAIL</h2>
+          <p className="text-gray-600 mt-2">Build your newsletter from scratch using the visual builder. No template required.</p>
+        </div>
 
-        <Tabs defaultValue="campaign" className="space-y-8">
+        <Tabs defaultValue="content" className="space-y-8">
           <TabsList className="grid w-full grid-cols-3 max-w-md bg-transparent p-0 h-auto">
             <TabsTrigger
-              value="campaign"
+              value="content"
               className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white"
             >
-              <MdCampaign className="h-6 w-6" />
-              Campaign
+              <FileText className="h-4 w-4" />
+              Builder
             </TabsTrigger>
             <TabsTrigger
-              value="content"
+              value="campaign"
               className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white bg-white ml-2"
             >
-              <FileText className="h-4 w-4" />
-              Content
+              <MdCampaign className="h-6 w-6" />
+              Send
             </TabsTrigger>
             <TabsTrigger
               value="archive"
@@ -217,16 +187,34 @@ export default function NewCampaignPage() {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="content" className="mt-8">
+            <ContentEditor
+              ref={contentEditorRef}
+              useRawHtml={useRawHtml}
+              setUseRawHtml={setUseRawHtml}
+              rawHtml={rawHtml}
+              setRawHtml={setRawHtml}
+              onContentChange={(html) => setContent(html)}
+              subject={subject}
+              previewHtml={currentPreview}
+            />
+          </TabsContent>
+
           <TabsContent value="campaign" className="mt-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2">
-                <CampaignForm title={title} setTitle={setTitle} subject={subject} setSubject={setSubject} />
+                <CampaignForm
+                  title={title}
+                  setTitle={setTitle}
+                  subject={subject}
+                  setSubject={setSubject}
+                />
               </div>
               <div>
                 <TestEmailPanel
                   testEmail={testEmail}
                   setTestEmail={setTestEmail}
-                  disabled={isLoading || !testEmail || !subject || !getFinalContent()}
+                  disabled={isLoading || !testEmail || !subject}
                   onSendTest={handleSendTest}
                 />
                 <div className="pt-8 border-t border-gray-100">
@@ -239,19 +227,6 @@ export default function NewCampaignPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="content" className="mt-8">
-            <ContentEditor
-              useRawHtml={useRawHtml}
-              setUseRawHtml={setUseRawHtml}
-              rawHtml={rawHtml}
-              setRawHtml={setRawHtml}
-              onSaveRich={(html) => setContent(html)}
-              onExportToHtml={handleExportToHtml}
-              subject={subject}
-              previewHtml={getFinalContent()}
-            />
-          </TabsContent>
-
           <TabsContent value="archive" className="mt-8">
             <SettingsPanel />
           </TabsContent>
@@ -260,7 +235,7 @@ export default function NewCampaignPage() {
 
       <div className="pt-8 border-t border-gray-100">
         <div className="text-sm text-gray-500">
-          Draft saved:{" "}
+          Auto-saved:{" "}
           {new Date().toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
