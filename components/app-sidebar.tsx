@@ -36,7 +36,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b-0 px-6 py-8">
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-xl font-bold leading-none">
-            <Image src="/logo.png" alt="Gulle.tech" width={150} height={150} className="h-8 w-8" />
+            <Image src="/logo.png" alt="manishtamang.com" width={150} height={150} className="h-8 w-8" />
             <span className="tracking-tight mt-2">Gulle</span>
           </div>
           <div className="text-sm text-gray-500">Dashboard</div>
