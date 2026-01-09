@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("")
-  const [fromEmail, setFromEmail] = useState("newsletter@gulle.tech")
-  const [replyToEmail, setReplyToEmail] = useState("support@gulle.tech")
+  const [fromEmail, setFromEmail] = useState("newsletter@manishtamang.com")
+  const [replyToEmail, setReplyToEmail] = useState("support@manishtamang.com")
   const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "error" | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
@@ -50,16 +50,16 @@ export default function SettingsPage() {
 
   const handleSaveSettings = async () => {
     setIsLoading(true)
-    
+
     // In a real app, you would save these settings to your database
     // For now, we'll just simulate saving
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     toast({
       title: "Settings saved",
       description: "Your email settings have been updated successfully.",
     })
-    
+
     setIsLoading(false)
   }
 
@@ -87,8 +87,8 @@ export default function SettingsPage() {
         </p>
 
         <div className="flex items-center gap-4 pt-4">
-          <Button 
-            onClick={handleSaveSettings} 
+          <Button
+            onClick={handleSaveSettings}
             disabled={isLoading}
             className="bg-black text-white hover:bg-gray-800 rounded-full px-6"
           >
@@ -188,7 +188,7 @@ export default function SettingsPage() {
               <Input
                 id="fromEmail"
                 type="email"
-                placeholder="newsletter@gulle.tech"
+                placeholder="newsletter@manishtamang.com"
                 value={fromEmail}
                 onChange={(e) => setFromEmail(e.target.value)}
                 className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -207,7 +207,7 @@ export default function SettingsPage() {
               <Input
                 id="replyToEmail"
                 type="email"
-                placeholder="support@gulle.tech"
+                placeholder="support@manishtamang.com"
                 value={replyToEmail}
                 onChange={(e) => setReplyToEmail(e.target.value)}
                 className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
