@@ -1,36 +1,109 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react"
 import { Button } from "@/components/ui/button"
 import { Download, Save, Eye, Maximize2, Minimize2 } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useEmailEditor } from "@/hooks/use-email-editor"
 import { loadSavedDesign, saveDesignToLocalStorage as persistToStorage } from "@/lib/email-editor-storage"
+import { isValidEmailHtml } from "@/lib/email-content"
 
-interface EmailBuilderProps {
-  onSave?: (html: string, design: any) => void
-  onExportToHtml?: (html: string) => void
-  onContentChange?: (html: string) => void
-  initialDesign?: any
-  className?: string
-  storageKey?: string // Key for localStorage
+export interface EmailBuilderHandle {
+  exportHtml: () => Promise<string | null>
 }
 
-export function EmailBuilder({ 
-  onSave, 
-  onExportToHtml, 
-  onContentChange,
-  initialDesign, 
-  className,
-  storageKey = "email-builder-design"
-}: EmailBuilderProps) {
+interface EmailBuilderProps {
+  onSave?: (html: string, design: unknown) => void
+  onExportToHtml?: (html: string) => void
+  onContentChange?: (html: string) => void
+  initialDesign?: unknown
+  className?: string
+  storageKey?: string
+}
+
+export const EmailBuilder = forwardRef<EmailBuilderHandle, EmailBuilderProps>(function EmailBuilder(
+  {
+    onSave,
+    onExportToHtml,
+    onContentChange,
+    initialDesign,
+    className,
+    storageKey = "email-builder-design",
+  },
+  ref
+) {
   const { EmailEditorComponent, emailEditorRef } = useEmailEditor()
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [previewHtml, setPreviewHtml] = useState("")
   const [isExporting, setIsExporting] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<string>("")
+  const [saveStatus, setSaveStatus] = useState("")
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestHtmlRef = useRef("")
+
+  const notifyParent = useCallback(
+    (html: string, design: unknown) => {
+      if (!isValidEmailHtml(html)) return
+      latestHtmlRef.current = html
+      onContentChange?.(html)
+      onSave?.(html, design)
+    },
+    [onContentChange, onSave]
+  )
+
+  const persist = useCallback(
+    (html: string, design: unknown) => {
+      setIsSaving(true)
+      try {
+        persistToStorage(storageKey, html, design, setSaveStatus)
+      } finally {
+        setIsSaving(false)
+      }
+    },
+    [storageKey]
+  )
+
+  const exportHtmlFromEditor = useCallback((): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const unlayer = emailEditorRef.current?.editor
+      if (!unlayer) {
+        resolve(latestHtmlRef.current || loadSavedDesign(storageKey)?.html || null)
+        return
+      }
+
+      unlayer.exportHtml((data: { html?: string; design?: unknown }) => {
+        const html = data?.html?.trim() || ""
+        if (!isValidEmailHtml(html)) {
+          resolve(latestHtmlRef.current || loadSavedDesign(storageKey)?.html || null)
+          return
+        }
+
+        latestHtmlRef.current = html
+        persist(html, data.design ?? null)
+        notifyParent(html, data.design ?? null)
+        resolve(html)
+      })
+    })
+  }, [emailEditorRef, notifyParent, persist, storageKey])
+
+  useImperativeHandle(ref, () => ({
+    exportHtml: exportHtmlFromEditor,
+  }))
+
+  const scheduleAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    autoSaveTimerRef.current = setTimeout(() => {
+      void exportHtmlFromEditor()
+    }, 800)
+  }, [exportHtmlFromEditor])
 
   useEffect(() => {
     if (!EmailEditorComponent || !emailEditorRef.current) return
@@ -40,111 +113,55 @@ export function EmailBuilder({
       if (!saved || !unlayer) return
       if (saved.design) unlayer.loadDesign(saved.design)
       else if (saved.html) unlayer.loadHTML(saved.html)
+      if (saved.html) {
+        latestHtmlRef.current = saved.html
+        notifyParent(saved.html, saved.design)
+      }
     }
-    setTimeout(fn, 1000)
-  }, [EmailEditorComponent, storageKey])
+    const timer = setTimeout(fn, 1000)
+    return () => clearTimeout(timer)
+  }, [EmailEditorComponent, storageKey, notifyParent, emailEditorRef])
 
-  const persist = (html: string, design: any) => {
-    setIsSaving(true)
-    try {
-      persistToStorage(storageKey, html, design, setSaveStatus)
-    } finally {
-      setIsSaving(false)
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    }
+  }, [])
+
+  const openPreview = async () => {
+    setIsExporting(true)
+    const html = await exportHtmlFromEditor()
+    setIsExporting(false)
+    if (html) {
+      setPreviewHtml(html)
+      setIsPreviewOpen(true)
     }
   }
 
-  const exportHtml = () => {
-    const unlayer = emailEditorRef.current?.editor;
-    if (!unlayer) return;
-  
-    setIsExporting(true);
-  
-    unlayer.exportHtml((data: any) => {
-      if (data?.html) {
-        setPreviewHtml(data.html);
-        setIsPreviewOpen(true);
-        setIsExporting(false);
-        
-        persist(data.html, data.design);
-        
-        if (onSave) {
-          unlayer.saveDesign((design: any) => {
-            onSave(data.html, design);
-          });
-        }
-      } else {
-        alert("Failed to export HTML");
-        setIsExporting(false);
-      }
-    });
-  };
-  
+  const saveDesign = async () => {
+    const unlayer = emailEditorRef.current?.editor
+    if (!unlayer) return
+    setIsSaving(true)
+    await exportHtmlFromEditor()
+    setIsSaving(false)
+  }
 
-  const saveDesign = () => {
-    const unlayer = emailEditorRef.current?.editor;
-    if (unlayer) {
-      unlayer.saveDesign((design: any) => {
-        unlayer.exportHtml((data: any) => {
-          const { html } = data;
-  
-          if (html) {
-            persist(html, design);
-            
-            if (onSave) {
-              onSave(html, design);
-            }
-          }
-        });
-      });
-    }
-  };
-  
-
-  const onLoad = () => {}
-
-  const onReady = (unlayer: any) => {
+  const onReady = (unlayer: { addEventListener: (event: string, cb: () => void) => void; loadDesign: (design: unknown) => void; exportHtml: (cb: (data: { html?: string; design?: unknown }) => void) => void }) => {
     setTimeout(() => {
       if (!unlayer) return
-      
+
       if (initialDesign) {
         unlayer.loadDesign(initialDesign)
-      } else {
-        unlayer.addEventListener('design:updated', () => {
-          unlayer.exportHtml((data: any) => {
-            const { html } = data
-            if (onSave && html && html.length > 0 && !html.includes('missing-container')) onSave(html, null)
-            // Notify parent of content change
-            if (onContentChange && html && html.length > 0 && !html.includes('missing-container')) {
-              onContentChange(html)
-            }
-          })
-        })
       }
-      unlayer.exportHtml((data: any) => { // Another exportHtml call
-        const { html } = data
-        if (onSave && html && html.length > 0 && !html.includes('missing-container')) onSave(html, null)
-        // Notify parent of content change
-        if (onContentChange && html && html.length > 0 && !html.includes('missing-container')) {
-          onContentChange(html)
-        }
+
+      unlayer.addEventListener("design:updated", () => {
+        setSaveStatus("Auto-saving...")
+        scheduleAutoSave()
       })
+
+      void exportHtmlFromEditor()
     }, 1000)
   }
-
-  const onDesignLoad = (_data: any) => {}
-  const onDesignSave = (_data: any) => {
-    // Export HTML to get current content and notify parent
-    const unlayer = emailEditorRef.current?.editor;
-    if (unlayer && onContentChange) {
-      unlayer.exportHtml((data: any) => {
-        if (data?.html) {
-          onContentChange(data.html);
-        }
-      });
-    }
-  }
-
-
 
   return (
     <div className={className}>
@@ -154,8 +171,7 @@ export function EmailBuilder({
             <div>
               <h3 className="text-lg font-semibold">Email Editor</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Drag and drop elements to create your email template. Use the toolbar on the left to add content blocks.
-                <span className="text-blue-600 ml-2">Saves to your browser's local storage - click Save to preserve your work</span>
+                Drag and drop elements to create your email. Changes auto-save and export to HTML.
               </p>
               {saveStatus && (
                 <p className="text-xs text-gray-500 mt-1">{saveStatus}</p>
@@ -183,7 +199,7 @@ export function EmailBuilder({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={exportHtml}
+                onClick={openPreview}
                 disabled={isExporting || !EmailEditorComponent}
                 className="flex items-center gap-2"
               >
@@ -202,7 +218,7 @@ export function EmailBuilder({
               </Button>
               <Button
                 size="sm"
-                onClick={exportHtml}
+                onClick={openPreview}
                 disabled={isExporting || !EmailEditorComponent}
                 className="flex items-center gap-2"
               >
@@ -216,10 +232,12 @@ export function EmailBuilder({
           {EmailEditorComponent ? (
             <EmailEditorComponent
               ref={emailEditorRef}
-              onLoad={onLoad}
+              onLoad={() => {}}
               onReady={onReady}
-              onDesignLoad={onDesignLoad}
-              onDesignSave={onDesignSave}
+              onDesignLoad={() => {}}
+              onDesignSave={() => {
+                void exportHtmlFromEditor()
+              }}
               options={{
                 displayMode: "email",
                 features: {
@@ -294,25 +312,19 @@ export function EmailBuilder({
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsPreviewOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
               Close
             </Button>
             <Button
               onClick={() => {
                 navigator.clipboard.writeText(previewHtml)
-                // You could add a toast notification here
               }}
             >
               Copy HTML
             </Button>
             <Button
               onClick={() => {
-                if (onExportToHtml) {
-                  onExportToHtml(previewHtml)
-                }
+                onExportToHtml?.(previewHtml)
                 setIsPreviewOpen(false)
               }}
             >
@@ -323,4 +335,4 @@ export function EmailBuilder({
       </Dialog>
     </div>
   )
-}
+})
