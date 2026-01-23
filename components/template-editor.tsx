@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,12 +8,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { EmailBuilder } from "@/components/EmailBuilder"
+import { NewsletterEditor, type NewsletterEditorHandle } from "@/components/newsletter-editor/NewsletterEditor"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Eye, Save, X, Type, Code, ArrowLeft } from "lucide-react"
 import { Template } from "@/hooks/use-templates"
 import { captureEmailPreviewScreenshot, validateScreenshot, autoOptimizeScreenshot } from "@/lib/screenshot"
+import {
+  EMAIL_STORAGE_KEYS,
+  getNewsletterBlocksHtml,
+  loadDraftFromStorage,
+  saveDraftToStorage,
+} from "@/lib/email-content"
 
 interface TemplateEditorProps {
   template?: Template
@@ -23,6 +29,7 @@ interface TemplateEditorProps {
 }
 
 export function TemplateEditor({ template, onSave, onCancel, loading = false }: TemplateEditorProps) {
+  const editorRef = useRef<NewsletterEditorHandle>(null)
   const [name, setName] = useState(template?.name || "")
   const [description, setDescription] = useState(template?.description || "")
   const [category, setCategory] = useState(template?.category || "General")
@@ -30,44 +37,87 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
   const [isHtml, setIsHtml] = useState(template?.isHtml || false)
   const [showPreview, setShowPreview] = useState(false)
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false)
+  const [autoSaveStatus, setAutoSaveStatus] = useState("")
+
+  useEffect(() => {
+    if (template?.content) return
+
+    const draft = loadDraftFromStorage<{
+      name?: string
+      description?: string
+      category?: string
+      content?: string
+      isHtml?: boolean
+    }>(EMAIL_STORAGE_KEYS.templateDraft)
+
+    if (draft) {
+      if (draft.name) setName(draft.name)
+      if (draft.description) setDescription(draft.description)
+      if (draft.category) setCategory(draft.category)
+      if (typeof draft.isHtml === "boolean") setIsHtml(draft.isHtml)
+      if (draft.content) setContent(draft.content)
+    }
+
+    const blocksHtml = getNewsletterBlocksHtml(EMAIL_STORAGE_KEYS.templateBlocks)
+    if (blocksHtml && !draft?.content && !template?.content) {
+      setContent(blocksHtml)
+    }
+  }, [template?.content])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveDraftToStorage(EMAIL_STORAGE_KEYS.templateDraft, {
+        name,
+        description,
+        category,
+        content,
+        isHtml,
+      })
+      setAutoSaveStatus("Draft auto-saved")
+      setTimeout(() => setAutoSaveStatus(""), 2000)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [name, description, category, content, isHtml])
+
+  const resolveContent = async () => {
+    if (isHtml) return content.trim()
+    const exported = await editorRef.current?.exportHtml()
+    return exported?.trim() || content.trim() || getNewsletterBlocksHtml(EMAIL_STORAGE_KEYS.templateBlocks) || ""
+  }
 
   const handleSave = async () => {
     if (!name.trim()) return
 
     try {
       setIsCapturingScreenshot(true)
-      
+      const finalContent = await resolveContent()
+
+      if (!finalContent) return
+
       let previewImage = template?.previewImage || undefined
-      
-      if (content.trim()) {
-        try {
-          const screenshot = await captureEmailPreviewScreenshot(content)
-          
-          // Auto-optimize the screenshot if needed
-          const optimizedScreenshot = await autoOptimizeScreenshot(screenshot)
-          
-          // Validate the optimized screenshot before saving
-          const validation = validateScreenshot(optimizedScreenshot)
-          if (validation.isValid && validation.screenshot) {
-            previewImage = validation.screenshot.dataUrl
-          } else {
-            console.warn("Screenshot validation failed:", validation.error)
-            // Still save the template, just without the preview image
-          }
-        } catch (error) {
-          console.warn("Failed to capture screenshot:", error)
-          // Continue saving the template without the preview image
+
+      try {
+        const screenshot = await captureEmailPreviewScreenshot(finalContent)
+        const optimizedScreenshot = await autoOptimizeScreenshot(screenshot)
+        const validation = validateScreenshot(optimizedScreenshot)
+        if (validation.isValid && validation.screenshot) {
+          previewImage = validation.screenshot.dataUrl
         }
+      } catch (error) {
+        console.warn("Failed to capture screenshot:", error)
       }
 
       await onSave({
         name: name.trim(),
         description: description.trim(),
         category: category.trim(),
-        content: content.trim(),
+        content: finalContent,
         isHtml: true,
         previewImage,
       })
+
+      setContent(finalContent)
     } catch (error) {
       console.error("Failed to save template:", error)
     } finally {
@@ -75,19 +125,17 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
     }
   }
 
-  const getPreviewContent = () => {
-    return content
-  }
+  const getPreviewContent = () => content
 
   return (
     <div className="space-y-8">
-      {/* Header Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={onCancel} className="rounded-full">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Templates
           </Button>
+          {autoSaveStatus && <span className="text-xs text-gray-500">{autoSaveStatus}</span>}
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -99,8 +147,8 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={loading || !name.trim() || isCapturingScreenshot}
             className="bg-black text-white hover:bg-gray-800 rounded-full px-6"
           >
@@ -111,7 +159,6 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
-        {/* Template Details */}
         <div className="md:col-span-1 space-y-6">
           <Card className="border border-gray-200">
             <CardHeader>
@@ -165,7 +212,7 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <Type className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Rich Text</span>
+                    <span className="text-sm text-gray-600">Visual Builder</span>
                   </div>
                   <Switch
                     checked={isHtml}
@@ -212,16 +259,14 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
           )}
         </div>
 
-        {/* Content Editor */}
         <div className="md:col-span-2">
           <Card className="border border-gray-200">
             <CardHeader>
               <CardTitle className="text-lg font-medium">Template Content</CardTitle>
               <CardDescription className="text-gray-600">
-                {isHtml 
-                  ? "Write your HTML email template" 
-                  : "Create your template content with our rich text editor"
-                }
+                {isHtml
+                  ? "Write your HTML email template"
+                  : "Create your template with the block editor. Changes auto-save as you build."}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -235,38 +280,26 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
                     onChange={(e) => setContent(e.target.value)}
                     className="min-h-[400px] font-mono text-sm border-gray-300 focus:border-black focus:ring-black"
                   />
-                  <p className="text-sm text-gray-500">
-                    Write your complete HTML email template. You can use variables like {"{{name}}"} which will be replaced automatically.
-                  </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <EmailBuilder
-                    onSave={(html) => setContent(html)}
-                    onContentChange={(html) => setContent(html)}
-                    className="w-full"
-                  />
-                  <p className="text-sm text-gray-500">
-                    Use the drag-and-drop editor to create your email template. Variables like {"{{name}}"} will be replaced automatically.
-                  </p>
-                </div>
+                <NewsletterEditor
+                  ref={editorRef}
+                  storageKey={EMAIL_STORAGE_KEYS.templateBlocks}
+                  onChange={(html) => setContent(html)}
+                  className="w-full h-full min-h-[400px]"
+                />
               )}
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>Template Preview</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPreview(false)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>
@@ -275,7 +308,7 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
             <div className="border border-gray-200 rounded-lg bg-white">
               <div className="border-b border-gray-100 p-4">
                 <div className="font-medium text-gray-900">{name || "Template Name"}</div>
-                <div className="text-gray-500 text-xs mt-1">from newsletter@gulle.tech</div>
+                <div className="text-gray-500 text-xs mt-1">from newsletter@manishtamang.com</div>
               </div>
               <div className="p-6">
                 {getPreviewContent() ? (
@@ -293,4 +326,4 @@ export function TemplateEditor({ template, onSave, onCancel, loading = false }: 
       </Dialog>
     </div>
   )
-} 
+}
