@@ -2,7 +2,6 @@
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
 
@@ -37,12 +36,12 @@ export function CampaignForm({ title, setTitle, subject, setSubject }: Props) {
           onChange={(e) => setSubject(e.target.value)}
           className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
         />
-        <p className="text-sm text-gray-500">What subscribers will see</p>
+        <p className="text-sm text-gray-500">What subscribers will see in their inbox</p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="fromAddress" className="text-sm font-medium">From Address</Label>
-        <Input id="fromAddress" value="newsletter@gulle.tech" disabled className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0" />
+        <Input id="fromAddress" value="newsletter@manishtamang.com" disabled className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0" />
         <p className="text-sm text-gray-500">Sender email address</p>
       </div>
 
@@ -59,22 +58,6 @@ export function CampaignForm({ title, setTitle, subject, setSubject }: Props) {
         <Input placeholder="Add subscriber list..." className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0" />
         <p className="text-sm text-gray-500">Press Enter to add a list</p>
       </div>
-
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Email Format</Label>
-        <Select defaultValue="rich-text">
-          <SelectTrigger className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="rich-text">Rich text</SelectItem>
-            <SelectItem value="html">HTML</SelectItem>
-            <SelectItem value="plain-text">Plain text</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
     </div>
   )
 }
-
-
