@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { EmailBuilder } from "@/components/EmailBuilder"
+import { NewsletterEditor, type NewsletterEditorHandle } from "@/components/newsletter-editor/NewsletterEditor"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Edit, Save, X, Type, Code, RotateCcw } from "lucide-react"
+import { Edit, Save, X, Type, Code, RotateCcw } from "lucide-react"
 import { Template } from "@/hooks/use-templates"
 import { captureEmailPreviewScreenshot, validateScreenshot, autoOptimizeScreenshot } from "@/lib/screenshot"
+import { EMAIL_STORAGE_KEYS, getNewsletterBlocksHtml } from "@/lib/email-content"
 
 interface TemplatePreviewEditorProps {
   template: Template
@@ -22,6 +23,7 @@ interface TemplatePreviewEditorProps {
 }
 
 export function TemplatePreviewEditor({ template, onSave, onCancel, loading = false }: TemplatePreviewEditorProps) {
+  const editorRef = useRef<NewsletterEditorHandle>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [name, setName] = useState(template.name)
   const [description, setDescription] = useState(template.description)
@@ -30,44 +32,43 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
   const [isHtml, setIsHtml] = useState(template.isHtml)
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false)
 
+  const resolveContent = async () => {
+    if (isHtml) return content.trim()
+    const exported = await editorRef.current?.exportHtml()
+    return exported?.trim() || content.trim() || getNewsletterBlocksHtml(EMAIL_STORAGE_KEYS.templateBlocks) || ""
+  }
+
   const handleSave = async () => {
     if (!name.trim()) return
 
     try {
       setIsCapturingScreenshot(true)
-      
+      const finalContent = await resolveContent()
+      if (!finalContent) return
+
       let previewImage = template.previewImage
-      
-      if (content.trim()) {
-        try {
-          const screenshot = await captureEmailPreviewScreenshot(content)
-          
-          // Auto-optimize the screenshot if needed
-          const optimizedScreenshot = await autoOptimizeScreenshot(screenshot)
-          
-          // Validate the optimized screenshot before saving
-          const validation = validateScreenshot(optimizedScreenshot)
-          if (validation.isValid && validation.screenshot) {
-            previewImage = validation.screenshot.dataUrl
-          } else {
-            console.warn("Screenshot validation failed:", validation.error)
-            // Still save the template, just without the preview image
-          }
-        } catch (error) {
-          console.warn("Failed to capture screenshot:", error)
-          // Continue saving the template without the preview image
+
+      try {
+        const screenshot = await captureEmailPreviewScreenshot(finalContent)
+        const optimizedScreenshot = await autoOptimizeScreenshot(screenshot)
+        const validation = validateScreenshot(optimizedScreenshot)
+        if (validation.isValid && validation.screenshot) {
+          previewImage = validation.screenshot.dataUrl
         }
+      } catch (error) {
+        console.warn("Failed to capture screenshot:", error)
       }
 
       await onSave({
         name: name.trim(),
         description: description.trim(),
         category: category.trim(),
-        content: content.trim(),
+        content: finalContent,
         isHtml: true,
         previewImage,
       })
-      
+
+      setContent(finalContent)
       setIsEditing(false)
     } catch (error) {
       console.error("Failed to save template:", error)
@@ -192,8 +193,8 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
               <CardHeader>
                 <CardTitle>Template Content</CardTitle>
                 <CardDescription>
-                  {isHtml 
-                    ? "Write your HTML email template" 
+                  {isHtml
+                    ? "Write your HTML email template"
                     : "Create your template content with our rich text editor"
                   }
                 </CardDescription>
@@ -215,10 +216,11 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <EmailBuilder
-                      onSave={(html) => setContent(html)}
-                      onContentChange={(html) => setContent(html)}
-                      className="w-full"
+                    <NewsletterEditor
+                      ref={editorRef}
+                      storageKey={EMAIL_STORAGE_KEYS.templateBlocks}
+                      onChange={(html) => setContent(html)}
+                      className="w-full h-full min-h-[400px]"
                     />
                     <p className="text-sm text-gray-500">
                       Use the drag-and-drop editor to create your email template. Variables like {"{{name}}"} will be replaced automatically.
@@ -305,7 +307,7 @@ export function TemplatePreviewEditor({ template, onSave, onCancel, loading = fa
               <div className="border border-gray-200 rounded-lg bg-white">
                 <div className="border-b border-gray-100 p-4">
                   <div className="font-medium text-gray-900">{template.name}</div>
-                  <div className="text-gray-500 text-xs mt-1">from newsletter@gulle.tech</div>
+                  <div className="text-gray-500 text-xs mt-1">from newsletter@manishtamang.com</div>
                 </div>
                 <div className="p-6">
                   {getPreviewContent() ? (
