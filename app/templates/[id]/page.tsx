@@ -222,7 +222,7 @@ export default function TemplateDetailPage() {
                   <div className="border border-gray-200 rounded-lg bg-white">
                     <div className="border-b border-gray-100 p-4">
                       <div className="font-medium text-gray-900">{template.name}</div>
-                      <div className="text-gray-500 text-xs mt-1">from newsletter@manishtamang.com</div>
+                      <div className="text-gray-500 text-xs mt-1">from newsletter@gulle.tech</div>
                     </div>
                     <div className="p-6">
                       {template.content ? (
