@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("")
-  const [fromEmail, setFromEmail] = useState("newsletter@manishtamang.com")
-  const [replyToEmail, setReplyToEmail] = useState("support@manishtamang.com")
+  const [fromEmail, setFromEmail] = useState("newsletter@gulle.tech")
+  const [replyToEmail, setReplyToEmail] = useState("support@gulle.tech")
   const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "error" | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
@@ -188,7 +188,7 @@ export default function SettingsPage() {
               <Input
                 id="fromEmail"
                 type="email"
-                placeholder="newsletter@manishtamang.com"
+                placeholder="newsletter@gulle.tech"
                 value={fromEmail}
                 onChange={(e) => setFromEmail(e.target.value)}
                 className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -207,7 +207,7 @@ export default function SettingsPage() {
               <Input
                 id="replyToEmail"
                 type="email"
-                placeholder="support@manishtamang.com"
+                placeholder="support@gulle.tech"
                 value={replyToEmail}
                 onChange={(e) => setReplyToEmail(e.target.value)}
                 className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0"
