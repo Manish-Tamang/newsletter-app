@@ -18,6 +18,7 @@ import { IoIosMail } from "react-icons/io";
 import { IoPeople } from "react-icons/io5";
 import { FaFileAlt } from "react-icons/fa";
 import { AiFillSetting } from "react-icons/ai";
+import Image from "next/image";
 
 const navigation = [
   { title: "Dashboard", url: "/dashboard", icon: MdDashboardCustomize },
@@ -34,7 +35,10 @@ export function AppSidebar() {
     <Sidebar className="border-r-0 bg-white">
       <SidebarHeader className="border-b-0 px-6 py-8">
         <div className="space-y-1">
-          <div className="text-xl font-medium">Newsletter Pro</div>
+          <div className="flex items-center gap-1 text-xl font-bold leading-none">
+            <Image src="/logo.png" alt="Gulle.tech" width={150} height={150} className="h-8 w-8" />
+            <span className="tracking-tight mt-2">Gulle</span>
+          </div>
           <div className="text-sm text-gray-500">Dashboard</div>
         </div>
       </SidebarHeader>
@@ -50,7 +54,7 @@ export function AppSidebar() {
                     className="w-full justify-start px-0 py-3 text-gray-600 hover:text-black hover:bg-transparent data-[active=true]:bg-transparent data-[active=true]:text-black data-[active=true]:font-medium"
                   >
                     <Link href={item.url}>
-                      <item.icon className="size-4 mr-1" />
+                      <item.icon className="size-10" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
