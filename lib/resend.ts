@@ -68,7 +68,7 @@ export class ResendService {
       }
 
       const { data, error } = await resend.emails.send({
-        from: emailData.from || "newsletter@manishtamang.com",
+        from: emailData.from || "newsletter@gulle.tech",
         to: emailData.to,
         subject: emailData.subject,
         html: emailData.html,
@@ -118,7 +118,7 @@ export class ResendService {
             to: subscriber,
             subject: campaignData.subject,
             html: campaignData.content,
-            from: campaignData.fromEmail || "newsletter@manishtamang.com",
+            from: campaignData.fromEmail || "newsletter@gulle.tech",
             replyTo: campaignData.replyTo,
           })
         )
@@ -160,7 +160,7 @@ export class ResendService {
       to,
       subject: `[TEST] ${subject}`,
       html: content,
-      from: "newsletter@manishtamang.com",
+      from: "newsletter@gulle.tech",
     });
   }
 
