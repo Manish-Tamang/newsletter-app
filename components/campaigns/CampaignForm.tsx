@@ -42,7 +42,7 @@ export function CampaignForm({ title, setTitle, subject, setSubject }: Props) {
 
       <div className="space-y-2">
         <Label htmlFor="fromAddress" className="text-sm font-medium">From Address</Label>
-        <Input id="fromAddress" value="newsletter@manishtamang.com" disabled className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0" />
+        <Input id="fromAddress" value="newsletter@gulle.tech" disabled className="border-0 bg-gray-50 focus-visible:ring-0 focus-visible:ring-offset-0" />
         <p className="text-sm text-gray-500">Sender email address</p>
       </div>
 
