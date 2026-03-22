@@ -75,7 +75,7 @@ export function useEmail() {
           to, 
           subject, 
           html: content,
-          from: 'newsletter@manishtamang.com'
+          from: 'newsletter@gulle.tech'
         }),
       });
 
