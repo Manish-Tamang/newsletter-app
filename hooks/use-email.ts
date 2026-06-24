@@ -71,11 +71,11 @@ export function useEmail() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          to, 
-          subject, 
+        body: JSON.stringify({
+          to,
+          subject,
           html: content,
-          from: 'newsletter@gulle.tech'
+          from: 'newsletter@manishtamang.com'
         }),
       });
 
