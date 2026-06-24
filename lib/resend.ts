@@ -68,7 +68,7 @@ export class ResendService {
       }
 
       const { data, error } = await resend.emails.send({
-        from: emailData.from || "newsletter@gulle.tech",
+        from: emailData.from || "newsletter@manishtamang.com",
         to: emailData.to,
         subject: emailData.subject,
         html: emailData.html,
@@ -118,7 +118,7 @@ export class ResendService {
             to: subscriber,
             subject: campaignData.subject,
             html: campaignData.content,
-            from: campaignData.fromEmail || "newsletter@gulle.tech",
+            from: campaignData.fromEmail || "newsletter@manishtamang.com",
             replyTo: campaignData.replyTo,
           })
         )
@@ -160,7 +160,7 @@ export class ResendService {
       to,
       subject: `[TEST] ${subject}`,
       html: content,
-      from: "newsletter@gulle.tech",
+      from: "newsletter@manishtamang.com",
     });
   }
 
@@ -206,7 +206,7 @@ export class ResendService {
       }
 
       // Transform the raw data to match our Contact interface
-      const transformedContacts = (data?.data || []).map(contact => 
+      const transformedContacts = (data?.data || []).map(contact =>
         this.transformContactData(contact)
       );
 
@@ -256,7 +256,7 @@ export class ResendService {
       }
 
       // Transform the raw data to match our Audience interface
-      const transformedAudiences = (data?.data || []).map(audience => 
+      const transformedAudiences = (data?.data || []).map(audience =>
         this.transformAudienceData(audience)
       );
 
