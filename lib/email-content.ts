@@ -1,4 +1,5 @@
-import { blocksToHtml, type NewsletterBlock } from "@/components/newsletter-editor/types"
+import { blocksToHtml } from "@/components/newsletter-editor/html"
+import { parseEditorDocument } from "@/components/newsletter-editor/theme"
 
 export const EMAIL_STORAGE_KEYS = {
   campaignBlocks: "newsletter_editor_blocks",
@@ -26,9 +27,9 @@ export function getNewsletterBlocksHtml(storageKey: string = EMAIL_STORAGE_KEYS.
   const saved = localStorage.getItem(storageKey)
   if (!saved) return null
   try {
-    const blocks = JSON.parse(saved) as NewsletterBlock[]
-    if (Array.isArray(blocks) && blocks.length > 0) {
-      const html = blocksToHtml(blocks)
+    const doc = parseEditorDocument(saved)
+    if (doc && doc.blocks.length > 0) {
+      const html = blocksToHtml(doc.blocks, doc.theme)
       return isValidEmailHtml(html) ? html : null
     }
   } catch {

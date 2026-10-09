@@ -1,13 +1,17 @@
 "use client"
 
-import { Bold, Italic, Underline, Link, AlignLeft, AlignCenter, AlignRight, Undo2, Redo2, Maximize2, Minimize2 } from "lucide-react"
+import type { ReactNode } from "react"
+import { Bold, Italic, Underline, Link, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Undo2, Redo2, Maximize2, Minimize2 } from "lucide-react"
 
 interface EditorToolbarProps {
   isFullscreen?: boolean
   onToggleFullscreen?: () => void
+  extra?: ReactNode
+  onAlign?: (alignment: "left" | "center" | "right") => void
+  activeAlign?: "left" | "center" | "right"
 }
 
-export function EditorToolbar({ isFullscreen, onToggleFullscreen }: EditorToolbarProps) {
+export function EditorToolbar({ isFullscreen, onToggleFullscreen, extra, onAlign, activeAlign }: EditorToolbarProps) {
   const exec = (command: string, value?: string) => {
     document.execCommand(command, false, value)
   }
@@ -20,10 +24,10 @@ export function EditorToolbar({ isFullscreen, onToggleFullscreen }: EditorToolba
   return (
     <div className="nl-toolbar">
       <div className="nl-toolbar-group">
-        <button className="nl-toolbar-btn" onClick={() => exec("undo")} title="Undo">
+        <button type="button" className="nl-toolbar-btn" onClick={() => exec("undo")} title="Undo">
           <Undo2 />
         </button>
-        <button className="nl-toolbar-btn" onClick={() => exec("redo")} title="Redo">
+        <button type="button" className="nl-toolbar-btn" onClick={() => exec("redo")} title="Redo">
           <Redo2 />
         </button>
       </div>
@@ -31,37 +35,45 @@ export function EditorToolbar({ isFullscreen, onToggleFullscreen }: EditorToolba
       <div className="nl-toolbar-separator" />
 
       <div className="nl-toolbar-group">
-        <button className="nl-toolbar-btn" onClick={() => exec("bold")} title="Bold">
+        <button type="button" className="nl-toolbar-btn" onClick={() => exec("bold")} title="Bold">
           <Bold />
         </button>
-        <button className="nl-toolbar-btn" onClick={() => exec("italic")} title="Italic">
+        <button type="button" className="nl-toolbar-btn" onClick={() => exec("italic")} title="Italic">
           <Italic />
         </button>
-        <button className="nl-toolbar-btn" onClick={() => exec("underline")} title="Underline">
+        <button type="button" className="nl-toolbar-btn" onClick={() => exec("underline")} title="Underline">
           <Underline />
         </button>
-        <button className="nl-toolbar-btn" onClick={handleLink} title="Insert Link">
+        <button type="button" className="nl-toolbar-btn" onClick={handleLink} title="Insert Link">
           <Link />
+        </button>
+        <button type="button" className="nl-toolbar-btn" onClick={() => exec("insertUnorderedList")} title="Bulleted list">
+          <List />
+        </button>
+        <button type="button" className="nl-toolbar-btn" onClick={() => exec("insertOrderedList")} title="Numbered list">
+          <ListOrdered />
         </button>
       </div>
 
       <div className="nl-toolbar-separator" />
 
       <div className="nl-toolbar-group">
-        <button className="nl-toolbar-btn" onClick={() => exec("justifyLeft")} title="Align Left">
+        <button type="button" className={`nl-toolbar-btn ${activeAlign === "left" ? "nl-active" : ""}`} onClick={() => onAlign?.("left")} title="Align left">
           <AlignLeft />
         </button>
-        <button className="nl-toolbar-btn" onClick={() => exec("justifyCenter")} title="Align Center">
+        <button type="button" className={`nl-toolbar-btn ${activeAlign === "center" ? "nl-active" : ""}`} onClick={() => onAlign?.("center")} title="Align center">
           <AlignCenter />
         </button>
-        <button className="nl-toolbar-btn" onClick={() => exec("justifyRight")} title="Align Right">
+        <button type="button" className={`nl-toolbar-btn ${activeAlign === "right" ? "nl-active" : ""}`} onClick={() => onAlign?.("right")} title="Align right">
           <AlignRight />
         </button>
       </div>
 
+      <div className="nl-toolbar-spacer" />
+      {extra}
       {onToggleFullscreen && (
         <>
-          <div className="nl-toolbar-separator" style={{ marginLeft: "auto" }} />
+          <div className="nl-toolbar-separator" />
           <button
             className={`nl-toolbar-btn ${isFullscreen ? "nl-active" : ""}`}
             onClick={onToggleFullscreen}

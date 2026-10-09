@@ -82,13 +82,11 @@ export const ContentEditor = forwardRef<ContentEditorHandle, Props>(function Con
               <div className="font-medium text-lg">{subject || "Email Subject"}</div>
               <div className="text-gray-500 text-sm mt-1">from newsletter@manishtamang.com</div>
             </div>
-            <div className="p-6">
-              {previewHtml ? (
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-              ) : (
-                <p className="text-gray-500 italic">Your email content will appear here...</p>
-              )}
-            </div>
+            {previewHtml ? (
+              <iframe title="Email preview" className="h-[720px] w-full border-0 bg-transparent" srcDoc={previewHtml} />
+            ) : (
+              <p className="p-6 text-gray-500 italic">Your email content will appear here...</p>
+            )}
           </div>
         </div>
       </div>

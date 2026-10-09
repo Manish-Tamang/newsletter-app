@@ -2,6 +2,8 @@
 
 import { useRef, useEffect } from "react"
 import type { BlockComponentProps, FooterData } from "../types"
+import { BlockSettings } from "../BlockSettings"
+import { AlignPills, ColorField } from "../settings-controls"
 
 export function FooterBlock({ block, onUpdate, isSelected, onSelect }: BlockComponentProps<FooterData>) {
   const textRef = useRef<HTMLParagraphElement>(null)
@@ -45,17 +47,16 @@ export function FooterBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
     }
   }
 
+  const alignment = block.data.alignment || "center"
+
   return (
     <div onClick={onSelect}>
       <div
         className="nl-footer-block"
         style={{
-          backgroundColor: block.data.backgroundColor || "#f4f4f5",
-          color: block.data.textColor || "#71717a",
-          padding: "32px 24px",
-          textAlign: "center",
-          fontSize: "12px",
-          lineHeight: "1.6",
+          backgroundColor: block.data.backgroundColor || "#ffffff",
+          color: block.data.textColor || "#9ca3af",
+          textAlign: alignment,
         }}
       >
         <p
@@ -65,42 +66,42 @@ export function FooterBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
           onBlur={handleTextBlur}
           className="nl-footer-editable-text"
           style={{
-            margin: "0 0 8px 0",
+            margin: "0 0 2px 0",
             outline: "none",
-            color: block.data.textColor || "#71717a",
-            opacity: 0.8,
+            color: block.data.textColor || "#9ca3af",
           }}
           data-placeholder="Footer description text"
         />
-        <p
-          ref={companyRef}
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={handleCompanyBlur}
-          className="nl-footer-editable-company"
-          style={{
-            margin: "0 0 4px 0",
-            fontWeight: 600,
-            outline: "none",
-            color: block.data.textColor || "#71717a",
-            opacity: 0.9,
-          }}
-          data-placeholder="Company Name Inc."
-        />
-        <p
-          ref={addressRef}
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={handleAddressBlur}
-          className="nl-footer-editable-address"
-          style={{
-            margin: "0 0 16px 0",
-            outline: "none",
-            color: block.data.textColor || "#71717a",
-            opacity: 0.7,
-          }}
-          data-placeholder="123 Street Name, City, Country"
-        />
+        {block.data.companyName || isSelected ? (
+          <p
+            ref={companyRef}
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={handleCompanyBlur}
+            className="nl-footer-editable-company"
+            style={{
+              margin: "0",
+              outline: "none",
+              color: block.data.textColor || "#9ca3af",
+            }}
+            data-placeholder="Company name"
+          />
+        ) : null}
+        {block.data.address || isSelected ? (
+          <p
+            ref={addressRef}
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={handleAddressBlur}
+            className="nl-footer-editable-address"
+            style={{
+              margin: "0 0 8px 0",
+              outline: "none",
+              color: block.data.textColor || "#9ca3af",
+            }}
+            data-placeholder="Street, city"
+          />
+        ) : null}
         <p style={{ margin: "0" }}>
           <a
             href={block.data.unsubscribeUrl || "#"}
@@ -110,10 +111,8 @@ export function FooterBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: block.data.textColor || "#71717a",
+              color: block.data.textColor || "#9ca3af",
               textDecoration: "underline",
-              fontWeight: 600,
-              opacity: 0.9,
             }}
           >
             Unsubscribe
@@ -121,10 +120,10 @@ export function FooterBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
         </p>
       </div>
 
-      {isSelected && (
+      <BlockSettings active={isSelected}>
         <div className="nl-block-settings">
           <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Unsubscribe Link</span>
+            <span className="nl-settings-label">Unsubscribe</span>
             <input
               className="nl-settings-input"
               value={block.data.unsubscribeUrl}
@@ -133,24 +132,20 @@ export function FooterBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
             />
           </div>
           <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Colors</span>
-            <span style={{ fontSize: "12px", color: "#6b7280" }}>Background:</span>
-            <input
-              type="color"
-              className="nl-color-swatch"
-              value={block.data.backgroundColor || "#f4f4f5"}
-              onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
+            <AlignPills value={alignment} onChange={(next) => onUpdate({ alignment: next })} />
+            <ColorField
+              label="Background"
+              value={block.data.backgroundColor || "#ffffff"}
+              onChange={(backgroundColor) => onUpdate({ backgroundColor })}
             />
-            <span style={{ fontSize: "12px", color: "#6b7280", marginLeft: "12px" }}>Text:</span>
-            <input
-              type="color"
-              className="nl-color-swatch"
-              value={block.data.textColor || "#71717a"}
-              onChange={(e) => onUpdate({ textColor: e.target.value })}
+            <ColorField
+              label="Text"
+              value={block.data.textColor || "#9ca3af"}
+              onChange={(textColor) => onUpdate({ textColor })}
             />
           </div>
         </div>
-      )}
+      </BlockSettings>
     </div>
   )
 }

@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ImageIcon, Upload, Calendar } from "lucide-react"
+import { Upload, Calendar } from "lucide-react"
 import type { BlockComponentProps, HeaderData } from "../types"
+import { BlockSettings } from "../BlockSettings"
+import { AlignPills, ColorField } from "../settings-controls"
 
 export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComponentProps<HeaderData>) {
   const [isDraggingLogo, setIsDraggingLogo] = useState(false)
@@ -65,6 +67,7 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
   }
 
   const dateString = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+  const alignment = block.data.alignment || "center"
 
   return (
     <div onClick={onSelect}>
@@ -75,20 +78,18 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
         accept="image/*"
         style={{ display: "none" }}
       />
-      <div 
+      <div
         className="nl-header-block"
-        style={{ 
-          backgroundColor: block.data.backgroundColor || "#ffffff", 
+        style={{
+          backgroundColor: block.data.backgroundColor || "#ffffff",
           color: block.data.textColor || "#18181b",
-          padding: "32px 24px",
-          textAlign: "center",
-          borderBottom: "1px solid #e5e7eb"
+          textAlign: alignment,
         }}
       >
         {block.data.logoUrl ? (
           <div 
             className="nl-header-logo-container" 
-            style={{ marginBottom: "16px", position: "relative", display: "inline-block" }}
+            style={{ marginBottom: "8px", position: "relative", display: "inline-block" }}
             onDragOver={handleDragOver}
             onDragLeave={() => setIsDraggingLogo(false)}
             onDrop={handleDrop}
@@ -127,7 +128,7 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
                 border: "1px dashed #c7d2fe",
                 borderRadius: "6px",
                 cursor: "pointer",
-                marginBottom: "16px",
+                marginBottom: "8px",
                 background: "#fafafa"
               }}
             >
@@ -145,9 +146,10 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
           className="nl-header-title-edit"
           style={{
             margin: "0",
-            fontSize: "24px",
-            fontWeight: 800,
-            lineHeight: "1.2",
+            fontSize: "20px",
+            fontWeight: 700,
+            lineHeight: "1.25",
+            letterSpacing: "-0.02em",
             outline: "none",
             color: block.data.textColor || "#18181b",
           }}
@@ -161,8 +163,8 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
           onBlur={handleSubtitleBlur}
           className="nl-header-subtitle-edit"
           style={{
-            margin: "6px 0 0 0",
-            fontSize: "14px",
+            margin: "4px 0 0 0",
+            fontSize: "13px",
             outline: "none",
             color: block.data.textColor || "#18181b",
             opacity: 0.8
@@ -180,7 +182,7 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
               opacity: 0.5,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: alignment === "right" ? "flex-end" : alignment === "left" ? "flex-start" : "center",
               gap: "4px"
             }}
           >
@@ -190,7 +192,7 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
         )}
       </div>
 
-      {isSelected && (
+      <BlockSettings active={isSelected}>
         <div className="nl-block-settings">
           <div className="nl-block-settings-row">
             <span className="nl-settings-label">Logo</span>
@@ -230,25 +232,18 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
           </div>
           
           <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Colors</span>
-            <span style={{ fontSize: "12px", color: "#6b7280" }}>Background:</span>
-            <input
-              type="color"
-              className="nl-color-swatch"
+            <AlignPills value={alignment} onChange={(next) => onUpdate({ alignment: next })} />
+            <ColorField
+              label="Background"
               value={block.data.backgroundColor || "#ffffff"}
-              onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
+              onChange={(backgroundColor) => onUpdate({ backgroundColor })}
             />
-            <span style={{ fontSize: "12px", color: "#6b7280", marginLeft: "12px" }}>Text:</span>
-            <input
-              type="color"
-              className="nl-color-swatch"
+            <ColorField
+              label="Text"
               value={block.data.textColor || "#18181b"}
-              onChange={(e) => onUpdate({ textColor: e.target.value })}
+              onChange={(textColor) => onUpdate({ textColor })}
             />
-            
-            <div className="nl-toolbar-separator" />
-            
-            <span className="nl-settings-label" style={{ minWidth: "auto" }}>Show Date</span>
+            <span className="nl-settings-label">Date</span>
             <button
               type="button"
               className={`nl-pill ${block.data.showDate ? "nl-pill-active" : ""}`}
@@ -258,7 +253,7 @@ export function HeaderBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
             </button>
           </div>
         </div>
-      )}
+      </BlockSettings>
     </div>
   )
 }
