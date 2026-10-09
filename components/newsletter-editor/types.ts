@@ -9,24 +9,37 @@ export type BlockType =
   | "header"
   | "footer"
   | "socials"
+  | "logo"
+  | "callout"
+  | "list"
+  | "meta"
+  | "links"
+  | "banner"
+  | "card"
+
+export type Align = "left" | "center" | "right"
 
 export interface HeadingData {
   content: string
   level: 1 | 2 | 3
-  alignment: "left" | "center" | "right"
+  alignment: Align
+  color: string
 }
 
 export interface TextData {
   content: string
-  alignment: "left" | "center" | "right"
+  alignment: Align
+  size: "small" | "body" | "large"
+  color: string
 }
 
 export interface ImageData {
   src: string
   alt: string
   width: "full" | "medium" | "small"
-  alignment: "left" | "center" | "right"
+  alignment: Align
   linkUrl: string
+  radius: 0 | 8 | 12
 }
 
 export interface ButtonData {
@@ -34,7 +47,7 @@ export interface ButtonData {
   url: string
   variant: "filled" | "outline"
   color: string
-  alignment: "left" | "center" | "right"
+  alignment: Align
   borderRadius: "none" | "small" | "full"
 }
 
@@ -44,12 +57,14 @@ export interface DividerData {
 }
 
 export interface SpacerData {
-  height: 16 | 32 | 48 | 64
+  height: 8 | 12 | 16 | 24 | 32 | 48 | 64
 }
 
 export interface ColumnsData {
   left: string
   right: string
+  rightImage: string
+  variant: "plain" | "card"
 }
 
 export interface HeaderData {
@@ -60,6 +75,7 @@ export interface HeaderData {
   showDate: boolean
   backgroundColor: string
   textColor: string
+  alignment: Align
 }
 
 export interface FooterData {
@@ -69,6 +85,7 @@ export interface FooterData {
   unsubscribeUrl: string
   backgroundColor: string
   textColor: string
+  alignment: Align
 }
 
 export interface SocialLink {
@@ -79,9 +96,81 @@ export interface SocialLink {
 
 export interface SocialsData {
   links: SocialLink[]
-  alignment: "left" | "center" | "right"
-  iconSize: 20 | 24 | 28
+  alignment: Align
+  iconSize: 16 | 20 | 24 | 28
   iconColor: string
+}
+
+export interface LogoData {
+  src: string
+  alt: string
+  wordmark: string
+  suffix: string
+  alignment: Align
+  width: number
+  showRule: boolean
+  ruleColor: string
+}
+
+export interface CalloutData {
+  content: string
+  backgroundColor: string
+  textColor: string
+  alignment: Align
+  radius: number
+  mono: boolean
+}
+
+export interface ListItem {
+  id: string
+  content: string
+}
+
+export interface ListData {
+  items: ListItem[]
+  style: "bullet" | "number"
+  markerColor: string
+  alignment: Align
+}
+
+export interface MetaData {
+  label: string
+  value: string
+  valueUrl: string
+  alignment: Align
+}
+
+export interface LinkItem {
+  id: string
+  label: string
+  url: string
+}
+
+export interface LinksData {
+  items: LinkItem[]
+  alignment: Align
+}
+
+export interface BannerData {
+  eyebrow: string
+  title: string
+  subtitle: string
+  backgroundColor: string
+  titleColor: string
+  subtitleColor: string
+  showMark: boolean
+  markColor: string
+}
+
+export interface CardData {
+  title: string
+  body: string
+  buttonLabel: string
+  buttonUrl: string
+  buttonVariant: "filled" | "outline"
+  buttonColor: string
+  imageUrl: string
+  imageAlt: string
 }
 
 export type BlockData =
@@ -95,6 +184,13 @@ export type BlockData =
   | HeaderData
   | FooterData
   | SocialsData
+  | LogoData
+  | CalloutData
+  | ListData
+  | MetaData
+  | LinksData
+  | BannerData
+  | CardData
 
 export interface NewsletterBlock {
   id: string
@@ -103,7 +199,11 @@ export interface NewsletterBlock {
 }
 
 export interface BlockComponentProps<T extends BlockData = BlockData> {
-  block: NewsletterBlock & { data: T }
+  block: {
+    id: string
+    type: BlockType
+    data: T
+  }
   onUpdate: (data: Partial<T>) => void
   isSelected: boolean
   onSelect: () => void
@@ -111,69 +211,138 @@ export interface BlockComponentProps<T extends BlockData = BlockData> {
 
 export const BLOCK_TEMPLATES: Record<BlockType, () => BlockData> = {
   heading: () => ({
-    content: "Your Heading",
+    content: "Your heading",
     level: 1 as const,
     alignment: "left" as const,
+    color: "",
   }),
   text: () => ({
     content: "",
     alignment: "left" as const,
+    size: "body" as const,
+    color: "",
   }),
   image: () => ({
     src: "",
     alt: "",
     width: "full" as const,
-    alignment: "center" as const,
+    alignment: "left" as const,
     linkUrl: "",
+    radius: 8 as const,
   }),
   button: () => ({
-    label: "Click Here",
+    label: "Continue",
     url: "",
     variant: "filled" as const,
-    color: "#18181b",
-    alignment: "center" as const,
-    borderRadius: "small" as const,
+    color: "#111827",
+    alignment: "left" as const,
+    borderRadius: "full" as const,
   }),
   divider: () => ({
     style: "solid" as const,
     color: "#e5e7eb",
   }),
   spacer: () => ({
-    height: 32 as const,
+    height: 12 as const,
   }),
   columns: () => ({
     left: "",
     right: "",
+    rightImage: "",
+    variant: "plain" as const,
   }),
   header: () => ({
-    title: "NEWSLETTER TITLE",
-    subtitle: "Weekly updates and insights",
+    title: "Newsletter",
+    subtitle: "",
     logoUrl: "",
-    logoWidth: 80,
-    showDate: true,
+    logoWidth: 120,
+    showDate: false,
     backgroundColor: "#ffffff",
-    textColor: "#18181b",
+    textColor: "#111827",
+    alignment: "left" as const,
   }),
   footer: () => ({
-    text: "You are receiving this email because you opted in on our website.",
-    companyName: "Your Company Inc.",
-    address: "123 Main St, San Francisco, CA 94105",
+    text: "You received this email because you have an account with us.",
+    companyName: "Your Company",
+    address: "100 Market Street, San Francisco, CA 94105",
     unsubscribeUrl: "",
-    backgroundColor: "#f4f4f5",
-    textColor: "#71717a",
+    backgroundColor: "#ffffff",
+    textColor: "#9ca3af",
+    alignment: "left" as const,
   }),
   socials: () => ({
     links: [
       { platform: "facebook", url: "https://facebook.com", enabled: true },
-      { platform: "twitter", url: "https://twitter.com", enabled: true },
-      { platform: "instagram", url: "https://instagram.com", enabled: true },
-      { platform: "linkedin", url: "https://linkedin.com", enabled: false },
+      { platform: "twitter", url: "https://x.com", enabled: true },
+      { platform: "instagram", url: "https://instagram.com", enabled: false },
+      { platform: "linkedin", url: "https://linkedin.com", enabled: true },
       { platform: "youtube", url: "https://youtube.com", enabled: false },
       { platform: "website", url: "https://example.com", enabled: false },
     ],
-    alignment: "center" as const,
-    iconSize: 24 as const,
-    iconColor: "#71717a",
+    alignment: "left" as const,
+    iconSize: 16 as const,
+    iconColor: "#4b5563",
+  }),
+  logo: () => ({
+    src: "",
+    alt: "Logo",
+    wordmark: "ACME",
+    suffix: "",
+    alignment: "left" as const,
+    width: 28,
+    showRule: false,
+    ruleColor: "#f6821f",
+  }),
+  callout: () => ({
+    content: "482913",
+    backgroundColor: "#e7f6ec",
+    textColor: "#111827",
+    alignment: "left" as const,
+    radius: 6,
+    mono: false,
+  }),
+  list: () => ({
+    items: [
+      { id: generateBlockId(), content: "First item" },
+      { id: generateBlockId(), content: "Second item" },
+    ],
+    style: "bullet" as const,
+    markerColor: "#f6821f",
+    alignment: "left" as const,
+  }),
+  meta: () => ({
+    label: "Account",
+    value: "you@company.com",
+    valueUrl: "",
+    alignment: "left" as const,
+  }),
+  links: () => ({
+    items: [
+      { id: generateBlockId(), label: "Website", url: "https://example.com" },
+      { id: generateBlockId(), label: "Help", url: "https://example.com/help" },
+      { id: generateBlockId(), label: "Privacy", url: "https://example.com/privacy" },
+    ],
+    alignment: "left" as const,
+  }),
+  banner: () => ({
+    eyebrow: "This month",
+    title: "A clearer way to ship the update",
+    subtitle: "Short context that sits under the title.",
+    backgroundColor: "#1c1917",
+    titleColor: "#f5c542",
+    subtitleColor: "#e7e5e4",
+    showMark: true,
+    markColor: "#f97316",
+  }),
+  card: () => ({
+    title: "A related story",
+    body: "One or two lines that explain why this is worth opening.",
+    buttonLabel: "Learn more",
+    buttonUrl: "",
+    buttonVariant: "outline" as const,
+    buttonColor: "#f97316",
+    imageUrl: "",
+    imageAlt: "",
   }),
 }
 
@@ -185,171 +354,18 @@ export const BLOCK_META: Record<BlockType, { label: string; icon: string }> = {
   divider: { label: "Divider", icon: "Minus" },
   spacer: { label: "Spacer", icon: "MoveVertical" },
   columns: { label: "Columns", icon: "Columns2" },
-  header: { label: "Header", icon: "LayoutHeader" },
+  header: { label: "Masthead", icon: "LayoutHeader" },
   footer: { label: "Footer", icon: "LayoutFooter" },
   socials: { label: "Socials", icon: "Share2" },
+  logo: { label: "Logo", icon: "Hexagon" },
+  callout: { label: "Callout", icon: "Square" },
+  list: { label: "List", icon: "List" },
+  meta: { label: "Meta", icon: "AtSign" },
+  links: { label: "Links", icon: "Link2" },
+  banner: { label: "Banner", icon: "RectangleHorizontal" },
+  card: { label: "Card", icon: "GalleryHorizontal" },
 }
 
 export function generateBlockId(): string {
-  return `block_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-}
-
-export function blocksToHtml(blocks: NewsletterBlock[]): string {
-  const bodyContent = blocks.map(blockToHtml).join("\n")
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-  table { border-spacing: 0; border-collapse: collapse; }
-  td { padding: 0; }
-  img { border: 0; display: block; }
-</style>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
-<tr><td align="center" style="padding:32px 16px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;">
-${bodyContent}
-</table>
-</td></tr>
-</table>
-</body>
-</html>`
-}
-
-function stripHeavyContent(html: string): string {
-  if (!html) return html
-  return html
-    .replace(/<img[^>]*>/gi, "")
-    .replace(/data:[^"')\s]+/gi, "")
-}
-
-function blockToHtml(block: NewsletterBlock): string {
-  switch (block.type) {
-    case "heading": {
-      const d = block.data as HeadingData
-      const sizes: Record<number, string> = { 1: "28px", 2: "22px", 3: "18px" }
-      const weights: Record<number, string> = { 1: "700", 2: "600", 3: "600" }
-      return `<tr><td style="padding:24px 32px 8px 32px;text-align:${d.alignment};">
-<h${d.level} style="margin:0;font-size:${sizes[d.level]};font-weight:${weights[d.level]};line-height:1.3;color:#18181b;">${stripHeavyContent(d.content)}</h${d.level}>
-</td></tr>`
-    }
-    case "text": {
-      const d = block.data as TextData
-      return `<tr><td style="padding:8px 32px;text-align:${d.alignment};">
-<p style="margin:0;font-size:16px;line-height:1.6;color:#3f3f46;">${stripHeavyContent(d.content) || "&nbsp;"}</p>
-</td></tr>`
-    }
-    case "image": {
-      // Image output disabled for now: base64 data URLs bloat the email and get
-      // clipped by mail clients. Render nothing until hosted-image logic is added.
-      return ""
-      // const d = block.data as ImageData
-      // if (!d.src) return ""
-      // const widths: Record<string, string> = { full: "100%", medium: "70%", small: "40%" }
-      // const imgTag = `<img src="${d.src}" alt="${d.alt}" style="width:${widths[d.width]};max-width:100%;height:auto;display:block;${d.alignment === "center" ? "margin:0 auto;" : ""}" />`
-      // const wrapped = d.linkUrl ? `<a href="${d.linkUrl}" target="_blank">${imgTag}</a>` : imgTag
-      // return `<tr><td style="padding:16px 32px;text-align:${d.alignment};">${wrapped}</td></tr>`
-    }
-    case "button": {
-      const d = block.data as ButtonData
-      const radius = d.borderRadius === "full" ? "50px" : d.borderRadius === "small" ? "6px" : "0"
-      const bg = d.variant === "filled" ? d.color : "transparent"
-      const textColor = d.variant === "filled" ? "#ffffff" : d.color
-      const border = d.variant === "outline" ? `2px solid ${d.color}` : "none"
-      return `<tr><td style="padding:16px 32px;text-align:${d.alignment};">
-<a href="${d.url || "#"}" target="_blank" style="display:inline-block;padding:12px 28px;background-color:${bg};color:${textColor};border:${border};border-radius:${radius};text-decoration:none;font-size:15px;font-weight:600;line-height:1;">${d.label}</a>
-</td></tr>`
-    }
-    case "divider": {
-      const d = block.data as DividerData
-      return `<tr><td style="padding:16px 32px;">
-<hr style="margin:0;border:none;border-top:1px ${d.style} ${d.color};" />
-</td></tr>`
-    }
-    case "spacer": {
-      const d = block.data as SpacerData
-      return `<tr><td style="height:${d.height}px;line-height:${d.height}px;">&nbsp;</td></tr>`
-    }
-    case "columns": {
-      const d = block.data as ColumnsData
-      return `<tr><td style="padding:8px 32px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-<tr>
-<td width="48%" style="vertical-align:top;padding-right:16px;">
-<p style="margin:0;font-size:16px;line-height:1.6;color:#3f3f46;">${stripHeavyContent(d.left) || "&nbsp;"}</p>
-</td>
-<td width="4%"></td>
-<td width="48%" style="vertical-align:top;padding-left:16px;">
-<p style="margin:0;font-size:16px;line-height:1.6;color:#3f3f46;">${stripHeavyContent(d.right) || "&nbsp;"}</p>
-</td>
-</tr>
-</table>
-</td></tr>`
-    }
-    case "header": {
-      const d = block.data as HeaderData
-      const logoTag = d.logoUrl
-        ? `<img src="${d.logoUrl}" alt="Logo" width="${d.logoWidth}" style="width:${d.logoWidth}px;max-width:100%;height:auto;margin-bottom:16px;display:inline-block;" />`
-        : ""
-      const dateString = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-      const dateTag = d.showDate
-        ? `<p style="margin:12px 0 0 0;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:${d.textColor};opacity:0.6;">${dateString}</p>`
-        : ""
-      return `<tr><td style="padding:40px 32px;background-color:${d.backgroundColor};text-align:center;border-bottom:1px solid #e5e7eb;">
-${logoTag}
-<h1 style="margin:0;font-size:28px;font-weight:800;line-height:1.2;color:${d.textColor};">${d.title}</h1>
-${d.subtitle ? `<p style="margin:8px 0 0 0;font-size:15px;color:${d.textColor};opacity:0.8;">${d.subtitle}</p>` : ""}
-${dateTag}
-</td></tr>`
-    }
-    case "footer": {
-      const d = block.data as FooterData
-      return `<tr><td style="padding:32px;background-color:${d.backgroundColor};text-align:center;font-size:12px;line-height:1.6;color:${d.textColor};">
-<p style="margin:0 0 8px 0;opacity:0.8;">${d.text}</p>
-<p style="margin:0 0 4px 0;font-weight:600;opacity:0.9;">${d.companyName}</p>
-<p style="margin:0 0 16px 0;opacity:0.7;">${d.address}</p>
-<p style="margin:0;"><a href="${d.unsubscribeUrl || "#"}" target="_blank" style="color:${d.textColor};text-decoration:underline;font-weight:600;opacity:0.9;">Unsubscribe</a></p>
-</td></tr>`
-    }
-    case "socials": {
-      const d = block.data as SocialsData
-      const activeLinks = d.links.filter((l) => l.enabled && l.url)
-      if (activeLinks.length === 0) return ""
-
-      const cdnIcons: Record<string, string> = {
-        facebook: "https://cdn-icons-png.flaticon.com/512/733/733547.png",
-        twitter: "https://cdn-icons-png.flaticon.com/512/733/733579.png",
-        instagram: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png",
-        linkedin: "https://cdn-icons-png.flaticon.com/512/174/174857.png",
-        youtube: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png",
-        website: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png",
-      }
-
-      const linksHtml = activeLinks
-        .map((l) => {
-          const iconSrc = cdnIcons[l.platform]
-          return `<td style="padding:0 8px;display:inline-block;">
-<a href="${l.url}" target="_blank" style="text-decoration:none;">
-<img src="${iconSrc}" alt="${l.platform}" width="${d.iconSize}" height="${d.iconSize}" style="display:block;width:${d.iconSize}px;height:${d.iconSize}px;border:0;${d.iconColor ? `filter: grayscale(1);` : ""}" />
-</a>
-</td>`
-        })
-        .join("")
-
-      return `<tr><td style="padding:24px 32px;text-align:${d.alignment};">
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:${d.alignment === "center" ? "0 auto" : d.alignment === "right" ? "0 0 0 auto" : "0 auto 0 0"};display:inline-block;">
-<tr>
-${linksHtml}
-</tr>
-</table>
-</td></tr>`
-    }
-    default:
-      return ""
-  }
+  return `block_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 }
