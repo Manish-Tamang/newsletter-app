@@ -1,54 +1,50 @@
 "use client"
 
 import type { BlockComponentProps, ButtonData } from "../types"
+import { BlockSettings } from "../BlockSettings"
+import { AlignPills } from "../settings-controls"
 
-const COLOR_PALETTE = [
-  "#18181b", "#3b82f6", "#8b5cf6", "#ec4899",
-  "#ef4444", "#f97316", "#22c55e", "#06b6d4",
-]
+const COLOR_PALETTE = ["#111827", "#f6821f", "#f97316", "#3b6fd6", "#16a34a", "#111111", "#7c3aed", "#e11d48"]
 
 export function ButtonBlock({ block, onUpdate, isSelected, onSelect }: BlockComponentProps<ButtonData>) {
   const { label, url, variant, color, alignment, borderRadius } = block.data
-
-  const radius = borderRadius === "full" ? "50px" : borderRadius === "small" ? "6px" : "0px"
+  const radius = borderRadius === "full" ? "999px" : borderRadius === "small" ? "6px" : "0px"
 
   const buttonStyle: React.CSSProperties = {
     display: "inline-block",
-    padding: "12px 28px",
+    padding: "10px 18px",
     backgroundColor: variant === "filled" ? color : "transparent",
     color: variant === "filled" ? "#ffffff" : color,
-    border: variant === "outline" ? `2px solid ${color}` : "none",
+    border: variant === "outline" ? `1px solid ${color}` : "none",
     borderRadius: radius,
     textDecoration: "none",
-    fontSize: "15px",
+    fontSize: "14px",
     fontWeight: 600,
-    lineHeight: 1,
-    cursor: "default",
+    lineHeight: 1.2,
+    letterSpacing: "-0.01em",
   }
 
   return (
     <div onClick={onSelect}>
       <div className="nl-button-preview" style={{ textAlign: alignment }}>
-        <span style={buttonStyle}>{label}</span>
+        <span
+          style={buttonStyle}
+          contentEditable
+          suppressContentEditableWarning
+          onBlur={(e) => onUpdate({ label: e.currentTarget.innerText })}
+        >
+          {label}
+        </span>
       </div>
-      {isSelected && (
+      <BlockSettings active={isSelected}>
         <div className="nl-block-settings">
-          <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Label</span>
-            <input
-              className="nl-settings-input"
-              value={label}
-              onChange={(e) => onUpdate({ label: e.target.value })}
-              placeholder="Button text"
-            />
-          </div>
           <div className="nl-block-settings-row">
             <span className="nl-settings-label">URL</span>
             <input
               className="nl-settings-input"
               value={url}
               onChange={(e) => onUpdate({ url: e.target.value })}
-              placeholder="https://..."
+              placeholder="https://"
             />
           </div>
           <div className="nl-block-settings-row">
@@ -57,40 +53,42 @@ export function ButtonBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
               {(["filled", "outline"] as const).map((v) => (
                 <button
                   key={v}
+                  type="button"
                   className={`nl-pill ${variant === v ? "nl-pill-active" : ""}`}
                   onClick={() => onUpdate({ variant: v })}
                 >
-                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                  {v === "filled" ? "Filled" : "Outline"}
                 </button>
               ))}
             </div>
-            <div className="nl-toolbar-separator" />
             <span className="nl-settings-label">Radius</span>
             <div className="nl-pill-group">
               {(["none", "small", "full"] as const).map((r) => (
                 <button
                   key={r}
+                  type="button"
                   className={`nl-pill ${borderRadius === r ? "nl-pill-active" : ""}`}
                   onClick={() => onUpdate({ borderRadius: r })}
                 >
-                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                  {r === "full" ? "Pill" : r === "small" ? "Soft" : "Square"}
                 </button>
               ))}
             </div>
+            <AlignPills value={alignment} onChange={(next) => onUpdate({ alignment: next })} />
           </div>
           <div className="nl-block-settings-row">
             <span className="nl-settings-label">Color</span>
-            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-              {COLOR_PALETTE.map((c) => (
+            <div className="nl-swatch-row">
+              {COLOR_PALETTE.map((swatch) => (
                 <button
-                  key={c}
+                  key={swatch}
+                  type="button"
                   className="nl-color-swatch"
                   style={{
-                    backgroundColor: c,
-                    borderColor: color === c ? "#818cf8" : "#e5e7eb",
-                    transform: color === c ? "scale(1.15)" : undefined,
+                    backgroundColor: swatch,
+                    borderColor: color === swatch ? "#818cf8" : "#e5e7eb",
                   }}
-                  onClick={() => onUpdate({ color: c })}
+                  onClick={() => onUpdate({ color: swatch })}
                 />
               ))}
               <input
@@ -98,26 +96,11 @@ export function ButtonBlock({ block, onUpdate, isSelected, onSelect }: BlockComp
                 value={color}
                 onChange={(e) => onUpdate({ color: e.target.value })}
                 className="nl-color-swatch"
-                style={{ cursor: "pointer" }}
               />
             </div>
           </div>
-          <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Align</span>
-            <div className="nl-pill-group">
-              {(["left", "center", "right"] as const).map((a) => (
-                <button
-                  key={a}
-                  className={`nl-pill ${alignment === a ? "nl-pill-active" : ""}`}
-                  onClick={() => onUpdate({ alignment: a })}
-                >
-                  {a.charAt(0).toUpperCase() + a.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
-      )}
+      </BlockSettings>
     </div>
   )
 }
