@@ -1,7 +1,9 @@
 "use client"
 
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaGlobe } from "react-icons/fa"
-import type { BlockComponentProps, SocialsData, SocialLink } from "../types"
+import type { BlockComponentProps, SocialsData } from "../types"
+import { BlockSettings } from "../BlockSettings"
+import { AlignPills, ColorField } from "../settings-controls"
 
 const PLATFORM_ICONS: Record<string, React.ComponentType<{ size?: number; style?: React.CSSProperties }>> = {
   facebook: FaFacebook,
@@ -33,13 +35,7 @@ export function SocialsBlock({ block, onUpdate, isSelected, onSelect }: BlockCom
 
   return (
     <div onClick={onSelect}>
-      <div
-        className="nl-socials-block"
-        style={{
-          padding: "20px 32px",
-          textAlign: block.data.alignment,
-        }}
-      >
+      <div className="nl-socials-block" style={{ textAlign: block.data.alignment }}>
         {activeLinks.length === 0 ? (
           <div style={{ fontSize: "12px", color: "#9ca3af", fontStyle: "italic", textAlign: "center" }}>
             Add socials links in settings below
@@ -71,13 +67,8 @@ export function SocialsBlock({ block, onUpdate, isSelected, onSelect }: BlockCom
                   }}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    color: block.data.iconColor || "#71717a",
-                    transition: "opacity 0.15s ease",
-                    display: "inline-block",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                  className="nl-social-bubble"
+                  style={{ color: block.data.iconColor || "#4b5563" }}
                 >
                   <IconComponent size={block.data.iconSize} />
                 </a>
@@ -87,45 +78,28 @@ export function SocialsBlock({ block, onUpdate, isSelected, onSelect }: BlockCom
         )}
       </div>
 
-      {isSelected && (
+      <BlockSettings active={isSelected}>
         <div className="nl-block-settings">
           <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Alignment</span>
+            <AlignPills value={block.data.alignment} onChange={(alignment) => onUpdate({ alignment })} />
+            <span className="nl-settings-label">Size</span>
             <div className="nl-pill-group">
-              {(["left", "center", "right"] as const).map((a) => (
-                <button
-                  key={a}
-                  className={`nl-pill ${block.data.alignment === a ? "nl-pill-active" : ""}`}
-                  onClick={() => onUpdate({ alignment: a })}
-                >
-                  {a.charAt(0).toUpperCase() + a.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="nl-toolbar-separator" />
-            <span className="nl-settings-label">Icon Size</span>
-            <div className="nl-pill-group">
-              {([20, 24, 28] as const).map((sz) => (
+              {([16, 20, 24] as const).map((sz) => (
                 <button
                   key={sz}
+                  type="button"
                   className={`nl-pill ${block.data.iconSize === sz ? "nl-pill-active" : ""}`}
                   onClick={() => onUpdate({ iconSize: sz })}
                 >
-                  {sz === 20 ? "Small" : sz === 24 ? "Medium" : "Large"}
+                  {sz === 16 ? "Small" : sz === 20 ? "Medium" : "Large"}
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Icon Color</span>
-            <input
-              type="color"
-              className="nl-color-swatch"
-              value={block.data.iconColor || "#71717a"}
-              onChange={(e) => onUpdate({ iconColor: e.target.value })}
+            <ColorField
+              label="Color"
+              value={block.data.iconColor || "#4b5563"}
+              onChange={(iconColor) => onUpdate({ iconColor })}
             />
-            <span style={{ fontSize: "11px", color: "#9ca3af", marginLeft: "8px" }}>Custom tint color for all icons</span>
           </div>
 
           <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -168,7 +142,7 @@ export function SocialsBlock({ block, onUpdate, isSelected, onSelect }: BlockCom
             })}
           </div>
         </div>
-      )}
+      </BlockSettings>
     </div>
   )
 }
