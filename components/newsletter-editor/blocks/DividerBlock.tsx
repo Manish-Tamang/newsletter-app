@@ -1,6 +1,8 @@
 "use client"
 
 import type { BlockComponentProps, DividerData } from "../types"
+import { BlockSettings } from "../BlockSettings"
+import { ColorField } from "../settings-controls"
 
 export function DividerBlock({ block, onUpdate, isSelected, onSelect }: BlockComponentProps<DividerData>) {
   return (
@@ -14,33 +16,26 @@ export function DividerBlock({ block, onUpdate, isSelected, onSelect }: BlockCom
           }}
         />
       </div>
-      {isSelected && (
+      <BlockSettings active={isSelected}>
         <div className="nl-block-settings">
           <div className="nl-block-settings-row">
             <span className="nl-settings-label">Style</span>
             <div className="nl-pill-group">
-              {(["solid", "dashed", "dotted"] as const).map((s) => (
+              {(["solid", "dashed", "dotted"] as const).map((style) => (
                 <button
-                  key={s}
-                  className={`nl-pill ${block.data.style === s ? "nl-pill-active" : ""}`}
-                  onClick={() => onUpdate({ style: s })}
+                  key={style}
+                  type="button"
+                  className={`nl-pill ${block.data.style === style ? "nl-pill-active" : ""}`}
+                  onClick={() => onUpdate({ style })}
                 >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                  {style.charAt(0).toUpperCase() + style.slice(1)}
                 </button>
               ))}
             </div>
-            <div className="nl-toolbar-separator" />
-            <span className="nl-settings-label">Color</span>
-            <input
-              type="color"
-              value={block.data.color}
-              onChange={(e) => onUpdate({ color: e.target.value })}
-              className="nl-color-swatch"
-              style={{ cursor: "pointer" }}
-            />
+            <ColorField label="Color" value={block.data.color} onChange={(color) => onUpdate({ color })} />
           </div>
         </div>
-      )}
+      </BlockSettings>
     </div>
   )
 }
