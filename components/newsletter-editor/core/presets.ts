@@ -1,9 +1,10 @@
 import { generateBlockId, type NewsletterBlock, type BlockType, type BlockData } from "./types"
 import type { EmailTheme } from "./theme"
 
-export type PresetId = "security" | "code" | "product" | "renewal"
+export type PresetId = "basic" | "security" | "code" | "product" | "renewal"
 
 export const PRESET_LIST: { id: PresetId; name: string; detail: string }[] = [
+  { id: "basic", name: "Simple letter", detail: "Logo, heading, paragraph, button, footer" },
   { id: "security", name: "Security alert", detail: "Accent bar, headline, sections" },
   { id: "code", name: "Sign-in code", detail: "Logo rule and a code box" },
   { id: "product", name: "Product update", detail: "Color field, banner, card" },
@@ -16,6 +17,8 @@ function block(type: BlockType, data: BlockData): NewsletterBlock {
 
 export function createPreset(id: PresetId): { theme: EmailTheme; blocks: NewsletterBlock[] } {
   switch (id) {
+    case "basic":
+      return basicPreset()
     case "security":
       return securityPreset()
     case "code":
@@ -24,6 +27,70 @@ export function createPreset(id: PresetId): { theme: EmailTheme; blocks: Newslet
       return productPreset()
     case "renewal":
       return renewalPreset()
+  }
+}
+
+function basicPreset(): { theme: EmailTheme; blocks: NewsletterBlock[] } {
+  return {
+    theme: {
+      pageBackground: "#f3f4f6",
+      cardBackground: "#ffffff",
+      cardRadius: 8,
+      accentColor: "#111827",
+      linkColor: "#2563eb",
+      headingColor: "#111827",
+      textColor: "#3f3f46",
+      mutedColor: "#6b7280",
+      font: "system",
+      paddingX: 40,
+      showAccentBar: false,
+      align: "left",
+    },
+    blocks: [
+      block("logo", {
+        src: "",
+        alt: "Your brand",
+        alignment: "left",
+        width: 120,
+        showRule: false,
+        ruleColor: "#111827",
+      }),
+      block("heading", {
+        content: "A short headline that says what this email is about",
+        level: 1,
+        alignment: "left",
+        color: "",
+      }),
+      block("text", {
+        content: "Hi there,<br><br>Start with one or two sentences that explain why you are writing. Keep paragraphs short so they read well on a phone.",
+        alignment: "left",
+        size: "body",
+        color: "",
+      }),
+      block("button", {
+        label: "Take a look",
+        url: "https://example.com",
+        variant: "filled",
+        color: "#111827",
+        alignment: "left",
+        borderRadius: "small",
+      }),
+      block("text", {
+        content: "Thanks for reading,<br>The team",
+        alignment: "left",
+        size: "body",
+        color: "",
+      }),
+      block("footer", {
+        text: "You are receiving this email because you signed up on our website.",
+        companyName: "Your Company, Inc.",
+        address: "100 Market Street, San Francisco, CA 94105",
+        unsubscribeUrl: "https://example.com/unsubscribe",
+        backgroundColor: "#ffffff",
+        textColor: "#9ca3af",
+        alignment: "left",
+      }),
+    ],
   }
 }
 
@@ -47,10 +114,8 @@ function securityPreset(): { theme: EmailTheme; blocks: NewsletterBlock[] } {
       block("logo", {
         src: "",
         alt: "Cloudline",
-        wordmark: "CLOUDLINE",
-        suffix: "",
         alignment: "left",
-        width: 28,
+        width: 120,
         showRule: false,
         ruleColor: "#f6821f",
       }),
@@ -202,10 +267,8 @@ function codePreset(): { theme: EmailTheme; blocks: NewsletterBlock[] } {
       block("logo", {
         src: "",
         alt: "Harbor",
-        wordmark: "Harbor",
-        suffix: "",
         alignment: "left",
-        width: 28,
+        width: 120,
         showRule: true,
         ruleColor: "#f6821f",
       }),
@@ -281,10 +344,8 @@ function productPreset(): { theme: EmailTheme; blocks: NewsletterBlock[] } {
       block("logo", {
         src: "",
         alt: "Beacon",
-        wordmark: "Beacon",
-        suffix: "",
         alignment: "center",
-        width: 28,
+        width: 120,
         showRule: false,
         ruleColor: "#f97316",
       }),
@@ -353,10 +414,8 @@ function renewalPreset(): { theme: EmailTheme; blocks: NewsletterBlock[] } {
       block("logo", {
         src: "",
         alt: "Registry",
-        wordmark: "registry",
-        suffix: "for education",
         alignment: "left",
-        width: 28,
+        width: 120,
         showRule: false,
         ruleColor: "#3b6fd6",
       }),

@@ -1,0 +1,41 @@
+import type { ComponentType } from "react"
+import {
+  Columns2,
+  Heading1,
+  Hexagon,
+  Image,
+  LayoutTemplate,
+  Link2,
+  List,
+  MessageSquareQuote,
+  Minus,
+  MousePointerClick,
+  PanelBottom,
+  PanelTop,
+  RectangleHorizontal,
+  Share2,
+  Tag,
+  Type,
+  UnfoldVertical,
+} from "lucide-react"
+import type { BlockType } from "../core/types"
+
+export const BLOCK_ICONS: Record<BlockType, ComponentType<{ size?: number }>> = {
+  logo: Hexagon,
+  header: PanelTop,
+  heading: Heading1,
+  text: Type,
+  list: List,
+  button: MousePointerClick,
+  callout: MessageSquareQuote,
+  meta: Tag,
+  image: Image,
+  banner: RectangleHorizontal,
+  card: LayoutTemplate,
+  columns: Columns2,
+  divider: Minus,
+  spacer: UnfoldVertical,
+  links: Link2,
+  socials: Share2,
+  footer: PanelBottom,
+}

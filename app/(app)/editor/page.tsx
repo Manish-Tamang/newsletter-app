@@ -4,15 +4,8 @@ import { NewsletterEditor } from "@/components/newsletter-editor/NewsletterEdito
 
 export default function EditorPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Email Builder</h1>
-        <p className="text-gray-600">
-          Create beautiful email newsletters with the block editor. Design responsive emails that look great on all devices.
-        </p>
-      </div>
-
-      <NewsletterEditor className="w-full min-h-[600px]" />
+    <div className="-m-6 flex h-[calc(100dvh-4rem)] min-h-[640px] min-w-0 overflow-hidden">
+      <NewsletterEditor className="h-full min-w-0 flex-1 rounded-none border-0" />
     </div>
   )
 }

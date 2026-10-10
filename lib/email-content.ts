@@ -1,5 +1,5 @@
-import { blocksToHtml } from "@/components/newsletter-editor/html"
-import { parseEditorDocument } from "@/components/newsletter-editor/theme"
+import { blocksToHtml } from "@/components/newsletter-editor/core/html"
+import { parseEditorDocument } from "@/components/newsletter-editor/core/theme"
 
 export const EMAIL_STORAGE_KEYS = {
   campaignBlocks: "newsletter_editor_blocks",
