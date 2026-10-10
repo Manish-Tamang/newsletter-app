@@ -1,21 +1,25 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import type { BlockComponentProps, CardData } from "../types"
-import { BlockSettings } from "../BlockSettings"
-import { ColorField } from "../settings-controls"
+import type { CSSProperties } from "react"
+import type { BlockComponentProps, CardData } from "../core/types"
+import { useEditable } from "./useEditable"
 
-export function CardBlock({ block, onUpdate, isSelected, onSelect }: BlockComponentProps<CardData>) {
-  const titleRef = useRef<HTMLParagraphElement>(null)
-  const bodyRef = useRef<HTMLDivElement>(null)
+export function CardBlock({ block, onUpdate, isSelected }: BlockComponentProps<CardData>) {
   const data = block.data
 
-  useEffect(() => {
-    if (titleRef.current && titleRef.current.innerText !== data.title) titleRef.current.innerText = data.title
-    if (bodyRef.current && bodyRef.current.innerHTML !== data.body) bodyRef.current.innerHTML = data.body
-  }, [])
+  const title = useEditable<HTMLParagraphElement>({
+    value: data.title,
+    mode: "singleline",
+    onChange: (value) => onUpdate({ title: value }, { typing: true }),
+  })
+  const body = useEditable({ value: data.body, onChange: (value) => onUpdate({ body: value }, { typing: true }) })
+  const buttonLabel = useEditable<HTMLSpanElement>({
+    value: data.buttonLabel,
+    mode: "singleline",
+    onChange: (value) => onUpdate({ buttonLabel: value }, { typing: true }),
+  })
 
-  const buttonStyle: React.CSSProperties = {
+  const buttonStyle: CSSProperties = {
     display: "inline-block",
     marginTop: 12,
     padding: "8px 14px",
@@ -25,86 +29,27 @@ export function CardBlock({ block, onUpdate, isSelected, onSelect }: BlockCompon
     lineHeight: 1.2,
     backgroundColor: data.buttonVariant === "filled" ? data.buttonColor : "transparent",
     color: data.buttonVariant === "filled" ? "#ffffff" : data.buttonColor,
-    border: data.buttonVariant === "outline" ? `1px solid ${data.buttonColor}` : "none",
+    border: data.buttonVariant === "outline" ? `1px solid ${data.buttonColor}` : "1px solid transparent",
   }
 
   return (
-    <div onClick={onSelect}>
-      <div className="nl-card-wrap">
-        <div className="nl-split-card">
-          <div className="nl-split-copy">
-            <p
-              ref={titleRef}
-              contentEditable
-              suppressContentEditableWarning
-              className="nl-split-title"
-              onBlur={() => titleRef.current && onUpdate({ title: titleRef.current.innerText })}
-            />
-            <div
-              ref={bodyRef}
-              contentEditable
-              suppressContentEditableWarning
-              className="nl-split-body"
-              onInput={() => bodyRef.current && onUpdate({ body: bodyRef.current.innerHTML })}
-            />
-            {data.buttonLabel ? (
-              <span
-                style={buttonStyle}
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => onUpdate({ buttonLabel: e.currentTarget.innerText })}
-              >
-                {data.buttonLabel}
-              </span>
-            ) : null}
-          </div>
-          <div className="nl-split-media">
-            {data.imageUrl ? (
-              <img src={data.imageUrl} alt={data.imageAlt || ""} />
-            ) : (
-              <div className="nl-split-fallback" />
-            )}
-          </div>
+    <div className="nl-card-wrap">
+      <div className="nl-split-card">
+        <div className="nl-split-copy">
+          <p ref={title.ref} {...title.props} className="nl-split-title" data-placeholder="Card title" />
+          <div ref={body.ref} {...body.props} className="nl-split-body" data-placeholder="One or two lines of context" />
+          <span
+            ref={buttonLabel.ref}
+            {...buttonLabel.props}
+            className="nl-button"
+            style={{ ...buttonStyle, display: data.buttonLabel || isSelected ? "inline-block" : "none" }}
+            data-placeholder="Button"
+          />
+        </div>
+        <div className="nl-split-media">
+          {data.imageUrl ? <img src={data.imageUrl} alt={data.imageAlt || ""} draggable={false} /> : <div className="nl-split-fallback" />}
         </div>
       </div>
-      <BlockSettings active={isSelected}>
-        <div className="nl-block-settings">
-          <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Button</span>
-            <div className="nl-pill-group">
-              {(["filled", "outline"] as const).map((buttonVariant) => (
-                <button
-                  key={buttonVariant}
-                  type="button"
-                  className={`nl-pill ${data.buttonVariant === buttonVariant ? "nl-pill-active" : ""}`}
-                  onClick={() => onUpdate({ buttonVariant })}
-                >
-                  {buttonVariant === "filled" ? "Filled" : "Outline"}
-                </button>
-              ))}
-            </div>
-            <ColorField label="Color" value={data.buttonColor} onChange={(buttonColor) => onUpdate({ buttonColor })} />
-          </div>
-          <div className="nl-block-settings-row">
-            <span className="nl-settings-label">URL</span>
-            <input
-              className="nl-settings-input"
-              value={data.buttonUrl}
-              placeholder="https://…"
-              onChange={(e) => onUpdate({ buttonUrl: e.target.value })}
-            />
-          </div>
-          <div className="nl-block-settings-row">
-            <span className="nl-settings-label">Image</span>
-            <input
-              className="nl-settings-input"
-              value={data.imageUrl}
-              placeholder="https://… image on the right"
-              onChange={(e) => onUpdate({ imageUrl: e.target.value })}
-            />
-          </div>
-        </div>
-      </BlockSettings>
     </div>
   )
 }
