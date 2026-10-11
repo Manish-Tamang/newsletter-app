@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Template {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  category      String?
+  content       String
+  isHtml        Boolean  @default(false)
+  /// Base64 encoded screenshot of the email template preview
+  /// This field stores the captured screenshot as a base64 string
+  /// Format: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+  /// Maximum size: ~1MB (base64 encoded)
+  /// Updated automatically when template is saved or content changes
+  previewImage  String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  usage         Int      @default(0)
+}
+
+model Campaign {
+  id          Int       @id @default(autoincrement())
+  title       String
+  subject     String
+  content     String
+  status      String    @default("draft") 
+  sentDate    DateTime?
+  openRate    Float?
+  clickRate   Float?
+  subscribers Int?
+  fromEmail   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
