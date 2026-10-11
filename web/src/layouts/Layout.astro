@@ -1,0 +1,36 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Gulle",
+  description = "Gulle is a newsletter workspace for campaigns, subscribers, and emails that stay aligned."
+} = Astro.props;
+
+const pageTitle = title === "Gulle" ? "Gulle · Write emails that look finished" : `${title} · Gulle`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body class="flex min-h-screen flex-col bg-white text-zinc-950 antialiased">
+    <SiteHeader />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

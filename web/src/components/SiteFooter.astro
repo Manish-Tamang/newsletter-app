@@ -1,0 +1,17 @@
+---
+const appUrl = import.meta.env.PUBLIC_APP_URL || "http://localhost:3000/dashboard";
+---
+
+<footer class="border-t border-zinc-200 bg-white">
+  <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-10 sm:flex-row sm:items-center sm:justify-between">
+    <p class="text-sm text-zinc-500">Gulle · emails that stay aligned</p>
+    <div class="flex gap-5 text-sm text-zinc-600">
+      <a href="/product" class="transition-colors hover:text-zinc-950">
+        Product
+      </a>
+      <a href={appUrl} class="transition-colors hover:text-zinc-950">
+        App
+      </a>
+    </div>
+  </div>
+</footer>

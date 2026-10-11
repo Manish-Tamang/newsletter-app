@@ -22,36 +22,78 @@ Integrated editor and app screens:
 - 🔄 **Real-time Data**: Fetch contacts and audiences from Resend.com
 - 📝 **Email Templates**: Create and manage reusable email templates
 
-## Tech Stack
+## Tech Stack & Architecture
 
-- **Framework**: Next.js 15 with App Router
-- **Styling**: Tailwind CSS with shadcn/ui components
-- **Email Service**: Resend.com API
-- **Language**: TypeScript
-- **Icons**: Lucide React
+This repository is structured as a Bun monorepo workspace:
+
+- **`web/`**: Marketing website built with **Astro** and **Tailwind CSS**. Fast, static, and SEO-optimized.
+- **`app/`**: The core **Newsletter App** product built with **Next.js 15 (App Router)**, **Tailwind CSS**, **Prisma**, **shadcn/ui**, and **Resend.com**.
+
+### Repository Structure
+
+```
+├── web/                       # Astro marketing & landing pages
+│   ├── src/
+│   │   ├── components/        # SiteHeader, Hero, ProductOverview, ProductDetails, SiteFooter
+│   │   ├── layouts/           # Layout.astro
+│   │   ├── pages/             # index.astro, product.astro
+│   │   └── styles/            # global.css (Tailwind v4)
+│   └── package.json
+│
+├── app/                       # Main product application (Next.js)
+│   ├── app/                   # Next.js App Router (/dashboard, /campaigns, /subscribers, /editor, /templates, api)
+│   ├── components/            # Feature-organized components
+│   │   ├── campaigns/         # Campaign forms, panels, content editors
+│   │   ├── dashboard/         # Dashboard metrics and overview cards
+│   │   ├── editor/            # HtmlCodeEditor, EmailBuilder, EmailTemplate
+│   │   ├── layout/            # AppSidebar, Header, ThemeProvider
+│   │   ├── newsletter-editor/ # Visual block-based email editor
+│   │   ├── subscribers/       # SubscribersTable, AddSubscriberDialog, DeleteSubscriber
+│   │   ├── templates/         # TemplateEditor, TemplatePreviewEditor, TemplateCard
+│   │   └── ui/                # shadcn/ui primitives
+│   ├── hooks/                 # Custom React hooks
+│   ├── lib/                   # Utilities, Prisma client, Resend integration
+│   ├── prisma/                # Prisma schema and migrations
+│   └── package.json
+│
+├── package.json               # Root monorepo workspace configuration
+└── pnpm-workspace.yaml        # PNPM workspace definition
+```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or pnpm
+- [Bun](https://bun.sh) (v1.2+) or Node.js 20+
 - Resend.com account
+- PostgreSQL database (Supabase or local)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd newsletter-app
-   ```
+```bash
+bun install
+```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   pnpm install
-   ```
+### Running Locally
+
+Run both apps concurrently:
+```bash
+bun run dev
+```
+
+Or run each app individually:
+```bash
+bun run dev:app   # Next.js product app at http://localhost:3000
+bun run dev:web   # Astro marketing site at http://localhost:4321
+```
+
+### Building for Production
+
+```bash
+bun run build       # Build all workspaces
+bun run build:app   # Build Next.js product app
+bun run build:web   # Build Astro marketing site
+```
 
 3. **Set up environment variables**
    
